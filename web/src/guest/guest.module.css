@@ -147,6 +147,26 @@
   color: var(--ink);
 }
 
+/* Closed or offline banner */
+.banner {
+  display: flex;
+  gap: var(--space-3);
+  align-items: flex-start;
+  padding: var(--space-3) var(--space-4);
+  background: var(--saffron);
+  color: var(--ink);
+  font-size: var(--text-sm);
+}
+
+.banner svg {
+  flex: none;
+  margin-top: 1px;
+}
+
+.banner strong {
+  font-weight: 800;
+}
+
 /* Footer */
 .footer {
   margin-top: var(--space-10);

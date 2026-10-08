@@ -42,7 +42,11 @@
     "payAtEnd": "Paguani në fund",
     "viewBasket": "Shiko shportën",
     "items_one": "{{count}} artikull",
-    "items_other": "{{count}} artikuj"
+    "items_other": "{{count}} artikuj",
+    "closedTitle": "Kuzhina është e mbyllur.",
+    "closedBody": "Mund ta shikoni menunë; porositë hapen sërish në orarin e punës.",
+    "offlineTitle": "Pa internet.",
+    "offlineBody": "Po shihni menunë e ruajtur. Për të porositur duhet lidhja."
   },
   "item": {
     "allergens": "Alergjenët",
@@ -88,7 +92,8 @@
     "note": "Shënim",
     "submit": "Porosit",
     "sending": "Po dërgohet…",
-    "error": "Porosia nuk u dërgua. Kontrolloni lidhjen dhe provoni përsëri."
+    "error": "Porosia nuk u dërgua. Kontrolloni lidhjen dhe provoni përsëri.",
+    "soldOut": "Ndërkohë mbaroi: {{dishes}}. E hoqëm nga shporta."
   },
   "status": {
     "title": "Faleminderit!",
@@ -108,35 +113,94 @@
     "addMore": "Shto edhe",
     "callWaiter": "Thirr kamarierin",
     "waiterCalled": "Kamarieri u njoftua",
-    "notFound": "Nuk e gjetëm këtë porosi."
+    "notFound": "Nuk e gjetëm këtë porosi.",
+    "closedTitle": "Tavolina u mbyll",
+    "closedBody": "Fatura u pagua. Faleminderit për vizitën!",
+    "orderAgain": "Porosit sërish"
   },
   "errors": {
     "tableTitle": "Ky kod nuk është më aktiv",
     "tableBody": "Ju lutemi pyesni stafin për ndihmë.",
     "generic": "Diçka nuk shkoi mirë. Provoni përsëri.",
-    "retry": "Provo përsëri"
+    "retry": "Provo përsëri",
+    "api": {
+      "network": "Nuk ka lidhje me internetin. Kontrolloni rrjetin dhe provoni përsëri.",
+      "internal": "Diçka nuk shkoi mirë nga ana jonë. Provoni përsëri pas pak.",
+      "unauthorized": "Seanca juaj mbaroi. Hyni përsëri.",
+      "forbidden": "Nuk keni leje për këtë veprim.",
+      "not_found": "Nuk u gjet. Ndoshta u ndryshua sapo.",
+      "invalid_request": "Disa fusha nuk janë plotësuar si duhet.",
+      "invalid_json": "Kërkesa nuk u lexua dot. Provoni përsëri.",
+      "table_invalid": "Ky kod nuk është më aktiv. Pyesni stafin për ndihmë.",
+      "no_session": "Skanoni sërish kodin e tavolinës.",
+      "session_closed": "Kjo tavolinë u mbyll. Skanoni sërish kodin për të porositur.",
+      "menu_changed": "Menuja ndryshoi ndërkohë.",
+      "invalid_options": "Disa opsione nuk janë më në dispozicion. Zgjidhini sërish.",
+      "venue_closed": "Kuzhina është e mbyllur tani. Provoni në orarin e punës.",
+      "too_many_orders": "Shumë porosi njëherësh nga kjo tavolinë. Pyesni kamarierin.",
+      "invalid_login": "Email-i ose fjalëkalimi nuk është i saktë.",
+      "password_change_required": "Zgjidhni fillimisht fjalëkalimin tuaj.",
+      "wrong_password": "Fjalëkalimi aktual nuk është i saktë.",
+      "same_password": "Fjalëkalimi i ri duhet të jetë ndryshe nga i vjetri.",
+      "email_taken": "Ky email ka tashmë një llogari.",
+      "last_owner": "Lokali duhet të ketë të paktën një pronar.",
+      "cannot_remove_self": "Nuk mund të hiqni llogarinë tuaj.",
+      "category_not_empty": "Kategoria ka ende pjata. Zhvendosini ose arkivojini më parë.",
+      "unknown_category": "Kjo kategori nuk ekziston më.",
+      "unknown_option_group": "Një grup opsionesh nuk ekziston më. Hapeni pjatën sërish.",
+      "unknown_option": "Një opsion nuk ekziston më. Hapeni pjatën sërish.",
+      "nothing_to_pay": "Kjo tavolinë nuk ka asgjë për të paguar.",
+      "unpaid_bill": "Kjo tavolinë ka ende një faturë të papaguar.",
+      "invalid_transition": "Porosia ndryshoi ndërkohë. Rifreskoni.",
+      "file_too_large": "Foto është shumë e madhe.",
+      "not_an_image": "Ky skedar nuk është foto.",
+      "missing_file": "Zgjidhni një foto.",
+      "invalid_kind": "Lloj i panjohur fotoje."
+    }
   },
   "dev": {
     "title": "Rishikimi i dizajnit",
-    "lead": "Çdo ekran dhe gjendje me të dhëna demo. Aplikacioni i klientit dhe paneli i stafit ndajnë të njëjtat të dhëna në këtë shfletues.",
+    "lead": "Çdo ekran dhe gjendje, me të dhënat demo nga databaza. Aplikacioni i klientit dhe paneli i stafit flasin me të njëjtin API.",
     "guestGroup": "Aplikacioni i klientit",
     "staffGroup": "Paneli i stafit",
     "tip": "Provoni: hapni panelin në një skedë dhe menunë në një tjetër. Porositni nga menuja dhe shikojeni të mbërrijë në panel me zile.",
     "fill": "Shto një shërbim demo",
-    "filled": "U shtuan 4 porosi dhe një thirrje",
+    "filled": "U shtuan 3 porosi dhe një thirrje",
     "resetButton": "Rivendos të dhënat demo",
     "reset": "Të dhënat demo u rivendosën",
     "staffSoonTitle": "Paneli i stafit",
     "staffSoonBody": "Dizajnohet në hapin 3.",
     "links": {
-      "menu": { "title": "Aplikacioni i klientit, tavolina 4", "body": "Menuja, pjata, shporta, porosia dhe statusi live" },
-      "green": { "title": "I njëjti, me ngjyrë jeshile", "body": "Tregon që ngjyra e çdo restoranti ndryshon gjithë aplikacionin" },
-      "item": { "title": "Pjatë me opsione", "body": "Sasi e detyrueshme, shtesa, përbërës për t'u hequr dhe një shtesë e mbaruar" },
-      "empty": { "title": "Shportë bosh", "body": "Tavolina 6, ende pa asgjë" },
-      "loading": { "title": "Gjendja e ngarkimit", "body": "Ngadalëson të dhënat demo që të duket skeleti" },
-      "invalid": { "title": "Kod QR i vjetër ose i pavlefshëm", "body": "Çfarë sheh klienti pasi stafi rivendos kodin e tavolinës" },
-      "staff": { "title": "Paneli i stafit", "body": "Hyni si pronar, menaxher ose kamarier" }
-    }
+      "menu": {
+        "title": "Aplikacioni i klientit, tavolina 4",
+        "body": "Menuja, pjata, shporta, porosia dhe statusi live"
+      },
+      "green": {
+        "title": "I njëjti, me ngjyrë jeshile",
+        "body": "Tregon që ngjyra e çdo restoranti ndryshon gjithë aplikacionin"
+      },
+      "item": {
+        "title": "Pjatë me opsione",
+        "body": "Sasi e detyrueshme, shtesa, përbërës për t'u hequr dhe një shtesë e mbaruar"
+      },
+      "empty": {
+        "title": "Shportë bosh",
+        "body": "Tavolina 6, ende pa asgjë"
+      },
+      "loading": {
+        "title": "Gjendja e ngarkimit",
+        "body": "Ngadalëson çdo thirrje API që të duket skeleti"
+      },
+      "invalid": {
+        "title": "Kod QR i vjetër ose i pavlefshëm",
+        "body": "Çfarë sheh klienti pasi stafi rivendos kodin e tavolinës"
+      },
+      "staff": {
+        "title": "Paneli i stafit",
+        "body": "Hyni si pronar, menaxher ose kamarier"
+      }
+    },
+    "resetHint": "Për të filluar nga e para: pnpm db:reset"
   },
   "staff": {
     "nav": {
@@ -178,7 +242,7 @@
       "submitting": "Duke hyrë…",
       "error": "Email-i ose fjalëkalimi nuk është i saktë.",
       "demoTitle": "Llogari demo",
-      "demoBody": "Një prekje për të hyrë me secilin rol."
+      "demoBody": "Një prekje për të hyrë me secilin rol (vetëm në kompjuterin e zhvillimit)."
     },
     "start": {
       "title": "Gati për shërbim?",
@@ -202,6 +266,7 @@
       "cardLabel": "Porosi nga tavolina {{number}}",
       "tableShort": "Tav.",
       "servedAt": "U shërbye {{time}} më parë",
+      "servedJustNow": "U shërbye tani",
       "cancel": "Anulo",
       "newTable": "Tavolinë e re.",
       "newTableHint": "Kontrolloni që klientët janë ulur.",
@@ -232,7 +297,9 @@
       "methodCash": "para në dorë",
       "methodCard": "kartë",
       "closeConfirm": "Mbyll tavolinën",
-      "closed": "Tavolina {{number}} u mbyll"
+      "closed": "Tavolina {{number}} u mbyll",
+      "clear": "Pastro tavolinën",
+      "cleared": "Tavolina {{number}} u pastrua"
     },
     "menu": {
       "title": "Menuja",
@@ -314,7 +381,8 @@
       "name": "Emri dhe mbiemri",
       "email": "Email",
       "role": "Roli",
-      "create": "Krijo llogarinë"
+      "create": "Krijo llogarinë",
+      "emailTaken": "Ky email ka tashmë një llogari, në këtë lokal ose në një tjetër."
     },
     "settings": {
       "title": "Cilësimet",
@@ -349,6 +417,21 @@
       "discard": "Anulo",
       "save": "Ruaj ndryshimet",
       "saved": "Cilësimet u ruajtën"
+    },
+    "password": {
+      "title": "Zgjidhni fjalëkalimin tuaj",
+      "firstTime": "Kjo është hyrja juaj e parë. Zëvendësoni fjalëkalimin e përkohshëm me një që e dini vetëm ju.",
+      "body": "Zgjidhni një fjalëkalim të ri.",
+      "temporary": "Fjalëkalimi i përkohshëm",
+      "current": "Fjalëkalimi aktual",
+      "new": "Fjalëkalimi i ri",
+      "repeat": "Përsëritni fjalëkalimin e ri",
+      "hint": "Të paktën {{count}} shenja.",
+      "submit": "Ruaj fjalëkalimin",
+      "tooShort": "Fjalëkalimi duhet të ketë të paktën {{count}} shenja.",
+      "mismatch": "Dy fjalëkalimet e reja nuk përputhen.",
+      "wrongCurrent": "Fjalëkalimi aktual nuk është i saktë.",
+      "same": "Fjalëkalimi i ri duhet të jetë ndryshe nga i vjetri."
     }
   }
 }

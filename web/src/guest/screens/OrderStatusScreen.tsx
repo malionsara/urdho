@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { useParams } from 'react-router';
 import { formatLek } from '@shared/money';
 import type { OrderStatus, PlacedOrder } from '@shared/types';
+import { isApiError } from '../../lib/http';
 import { Button, ButtonLink } from '../../ui/Button';
 import { Icon, type IconName } from '../../ui/Icon';
 import { KilimBand } from '../../ui/Kilim';
@@ -27,6 +28,17 @@ export function OrderStatusScreen() {
   const order = useOrderQuery(slug, qrToken, orderId);
 
   if (order.isPending) return <MenuSkeleton />;
+  // Staff took payment and closed the table: this phone's session is over.
+  if (isApiError(order.error, 'session_closed') || isApiError(order.error, 'no_session')) {
+    return (
+      <StateMessage
+        icon="check"
+        title={t('status.closedTitle')}
+        body={t('status.closedBody')}
+        action={<ButtonLink to={base}>{t('status.orderAgain')}</ButtonLink>}
+      />
+    );
+  }
   if (order.isError) {
     return (
       <StateMessage

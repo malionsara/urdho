@@ -1,7 +1,8 @@
 import { createContext, useCallback, useContext, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { lineTotalLek } from '@shared/pricing';
-import type { GuestMenu, Language, LocalizedText, MenuItem } from '@shared/types';
+import type { Language, LocalizedText, MenuItem } from '@shared/types';
 import i18n, { localize } from '../i18n';
+import type { LoadedMenu } from './api';
 
 export interface BasketLine {
   id: string;
@@ -18,7 +19,7 @@ interface StoredBasket {
 }
 
 interface GuestContextValue {
-  menu: GuestMenu;
+  menu: LoadedMenu;
   /** Path prefix for this table, e.g. /demo/t/demo-4 */
   base: string;
   slug: string;
@@ -38,6 +39,8 @@ interface GuestContextValue {
     add: (itemId: string, optionIds: string[], qty: number) => void;
     replace: (lineId: string, optionIds: string[], qty: number) => void;
     setQty: (lineId: string, qty: number) => void;
+    /** Drops every line of these dishes, e.g. ones that sold out while the guest was ordering. */
+    removeItems: (itemIds: string[]) => void;
     setNote: (note: string) => void;
     clear: () => void;
   };
@@ -75,7 +78,7 @@ function writeJson(key: string, value: unknown) {
   }
 }
 
-function initialLanguage(menu: GuestMenu): Language {
+function initialLanguage(menu: LoadedMenu): Language {
   const { languages, defaultLanguage } = menu.venue;
   try {
     const stored = localStorage.getItem(LANG_KEY) as Language | null;
@@ -90,7 +93,7 @@ function initialLanguage(menu: GuestMenu): Language {
 
 const sameOptions = (a: string[], b: string[]) => a.length === b.length && [...a].sort().join() === [...b].sort().join();
 
-export function GuestProvider({ menu, slug, qrToken, children }: { menu: GuestMenu; slug: string; qrToken: string; children: ReactNode }) {
+export function GuestProvider({ menu, slug, qrToken, children }: { menu: LoadedMenu; slug: string; qrToken: string; children: ReactNode }) {
   const basketKey = `urdho-basket:${slug}:${qrToken}`;
   const [lang, setLangState] = useState<Language>(() => initialLanguage(menu));
   const [stored, setStored] = useState<StoredBasket>(() => readJson(basketKey, emptyBasket));
@@ -150,6 +153,7 @@ export function GuestProvider({ menu, slug, qrToken, children }: { menu: GuestMe
           ...b,
           lines: qty <= 0 ? b.lines.filter((l) => l.id !== lineId) : b.lines.map((l) => (l.id === lineId ? { ...l, qty } : l)),
         })),
+      removeItems: (itemIds) => setStored((b) => ({ ...b, lines: b.lines.filter((l) => !itemIds.includes(l.itemId)) })),
       setNote: (note) => setStored((b) => ({ ...b, note })),
       clear: () => setStored(emptyBasket()),
     };

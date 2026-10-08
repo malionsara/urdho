@@ -1,243 +1,145 @@
-import type { OrderStatus, PaymentMethod, StaffRole, StaffUser, Venue } from '@shared/types';
-import {
-  latency,
-  newId,
-  now,
-  readDb,
-  sessionTotal,
-  updateDb,
-  type DbCall,
-  type DbCategory,
-  type DbItem,
-  type DbOrder,
-  type DbSession,
-  type DbTable,
-} from '../mock/db';
+import type { MenuItemInput, VenueSettingsInput } from '@shared/schemas';
+import type { LocalizedText, MenuItem, OrderStatus, PaymentMethod, PlacedOrderLine, StaffRole, StaffUser, Venue } from '@shared/types';
+import { api, ApiError } from '../lib/http';
 
 /*
- * Staff API. Until milestone 8 this runs against the mock database shared with the guest app;
- * the function signatures are the contract the real API will meet. Venue scoping is implicit
- * here because the mock holds one venue.
+ * The staff dashboard's API. The session is an httpOnly cookie the browser sends by itself; the
+ * venue always comes from it on the server, so no call here names a venue.
  */
 
-export class StaffApiError extends Error {
-  constructor(readonly code: 'invalid_login' | 'not_found' | 'last_owner') {
-    super(code);
-  }
+export interface StaffMe {
+  user: StaffUser & { mustChangePassword: boolean };
+  venue: Venue;
 }
 
-const wait = (ms = 120) => latency(ms);
-
-/** How long served orders stay on the board. */
-const SERVED_VISIBLE_MS = 90 * 60_000;
-
-/* Auth -------------------------------------------------------------------- */
-
-export async function login(email: string, _password: string): Promise<StaffUser> {
-  await wait(500);
-  const user = readDb().staff.find((s) => s.email.toLowerCase() === email.trim().toLowerCase());
-  if (!user) throw new StaffApiError('invalid_login');
-  return user;
-}
-
-/* Live board ---------------------------------------------------------------- */
-
-export interface BoardOrder extends DbOrder {
+export interface ServiceOrder {
+  id: string;
+  sessionId: string;
+  tableId: string;
   tableNumber: number;
+  status: OrderStatus;
+  guestName: string;
+  note: string;
+  createdAt: string;
+  statusChangedAt: string;
+  lines: PlacedOrderLine[];
+  totalLek: number;
+}
+
+export interface BoardOrder extends ServiceOrder {
   /** The first order of its table session: staff check someone is really seated. */
   firstInSession: boolean;
 }
 
-export interface BoardCall extends DbCall {
+export interface BoardCall {
+  id: string;
+  sessionId: string;
+  tableId: string;
   tableNumber: number;
+  createdAt: string;
 }
-
-export async function fetchBoard(): Promise<{ orders: BoardOrder[]; calls: BoardCall[] }> {
-  await wait();
-  const db = readDb();
-  const tableNumber = (id: string) => db.tables.find((t) => t.id === id)?.number ?? 0;
-  const cutoff = Date.now() - SERVED_VISIBLE_MS;
-  const firstOrderIds = new Set(
-    db.sessions.map((s) => db.orders.filter((o) => o.sessionId === s.id).sort((a, b) => a.createdAt.localeCompare(b.createdAt))[0]?.id),
-  );
-  const orders = db.orders
-    .filter((o) => o.status === 'new' || o.status === 'preparing' || (o.status === 'served' && Date.parse(o.statusChangedAt) > cutoff))
-    .map((o) => ({ ...o, tableNumber: tableNumber(o.tableId), firstInSession: firstOrderIds.has(o.id) }))
-    .sort((a, b) => a.createdAt.localeCompare(b.createdAt));
-  const calls = db.calls
-    .filter((c) => c.acknowledgedAt === null)
-    .map((c) => ({ ...c, tableNumber: tableNumber(c.tableId) }))
-    .sort((a, b) => a.createdAt.localeCompare(b.createdAt));
-  return { orders, calls };
-}
-
-export async function setOrderStatus(orderId: string, status: OrderStatus): Promise<void> {
-  await wait();
-  updateDb((db) => {
-    const order = db.orders.find((o) => o.id === orderId);
-    if (!order) throw new StaffApiError('not_found');
-    order.status = status;
-    order.statusChangedAt = now();
-  });
-}
-
-export async function acknowledgeCall(callId: string): Promise<void> {
-  await wait();
-  updateDb((db) => {
-    const call = db.calls.find((c) => c.id === callId);
-    if (call) call.acknowledgedAt = now();
-  });
-}
-
-/* Tables ------------------------------------------------------------------- */
 
 export interface TableSummary {
-  table: DbTable;
-  session: DbSession | null;
-  orders: DbOrder[];
+  table: { id: string; number: number; label: string | null };
+  session: { id: string; openedAt: string } | null;
+  orders: ServiceOrder[];
   billLek: number;
   openCall: boolean;
 }
 
-export async function fetchTables(): Promise<TableSummary[]> {
-  await wait();
-  const db = readDb();
-  return db.tables
-    .map((table) => {
-      const session = db.sessions.find((s) => s.tableId === table.id && s.closedAt === null) ?? null;
-      const orders = session ? db.orders.filter((o) => o.sessionId === session.id) : [];
-      return {
-        table,
-        // A session that only scanned or called is shown, but only orders make a bill.
-        session: session && (orders.length > 0 || db.calls.some((c) => c.sessionId === session.id)) ? session : null,
-        orders,
-        billLek: session ? sessionTotal(db, session.id) : 0,
-        openCall: session ? db.calls.some((c) => c.sessionId === session.id && c.acknowledgedAt === null) : false,
-      };
-    })
-    .sort((a, b) => a.table.number - b.table.number);
+export interface MenuCategoryRow {
+  id: string;
+  name: LocalizedText;
+  active: boolean;
 }
 
-/** Records the payment with the cash provider and closes the table, so its next guests start fresh. */
-export async function markSessionPaid(sessionId: string, method: PaymentMethod): Promise<void> {
-  await wait(300);
-  updateDb((db) => {
-    const session = db.sessions.find((s) => s.id === sessionId && s.closedAt === null);
-    if (!session) throw new StaffApiError('not_found');
-    db.payments.push({ id: newId(), sessionId, method, amountLek: sessionTotal(db, sessionId), createdAt: now() });
-    session.closedAt = now();
-    for (const call of db.calls) if (call.sessionId === sessionId && !call.acknowledgedAt) call.acknowledgedAt = now();
-  });
+export interface QrTable {
+  id: string;
+  number: number;
+  label: string | null;
+  qrToken: string;
 }
 
-/* Menu --------------------------------------------------------------------- */
+export type PhotoKind = 'dish' | 'cover' | 'logo';
 
-export async function fetchMenuAdmin(): Promise<{ categories: DbCategory[]; items: DbItem[]; venue: Venue }> {
-  await wait();
-  const db = readDb();
-  return { categories: db.categories, items: db.items.filter((i) => !i.archived), venue: db.venue };
+/* Sign-in ---------------------------------------------------------------------- */
+
+export const login = (email: string, password: string) => api<StaffMe>('/staff/login', { method: 'POST', body: { email, password } });
+
+export const logout = () => api<void>('/staff/logout', { method: 'POST' });
+
+/** Who is signed in on this device, or null. */
+export async function fetchMe(): Promise<StaffMe | null> {
+  try {
+    return await api<StaffMe>('/staff/me');
+  } catch (error) {
+    if (error instanceof ApiError && error.status === 401) return null;
+    throw error;
+  }
 }
 
-export async function saveItem(item: DbItem): Promise<void> {
-  await wait(250);
-  updateDb((db) => {
-    const index = db.items.findIndex((i) => i.id === item.id);
-    if (index === -1) db.items.push(item);
-    else db.items[index] = item;
-  });
+export const changePassword = (currentPassword: string, newPassword: string) =>
+  api<void>('/staff/password', { method: 'POST', body: { currentPassword, newPassword } });
+
+/* Service ---------------------------------------------------------------------- */
+
+export const fetchBoard = () => api<{ orders: BoardOrder[]; calls: BoardCall[] }>('/staff/board');
+
+export const setOrderStatus = (orderId: string, status: Exclude<OrderStatus, 'new'>) =>
+  api<void>(`/staff/orders/${orderId}`, { method: 'PATCH', body: { status } });
+
+export const acknowledgeCall = (callId: string) => api<void>(`/staff/calls/${callId}/acknowledge`, { method: 'POST' });
+
+export const fetchTables = async () => (await api<{ tables: TableSummary[] }>('/staff/tables')).tables;
+
+export const markSessionPaid = (sessionId: string, method: PaymentMethod) =>
+  api<{ paymentId: string; amountLek: number }>(`/staff/sessions/${sessionId}/pay`, { method: 'POST', body: { method } });
+
+export const closeEmptySession = (sessionId: string) => api<void>(`/staff/sessions/${sessionId}/close`, { method: 'POST' });
+
+/* Menu ------------------------------------------------------------------------- */
+
+export const fetchMenuAdmin = () => api<{ categories: MenuCategoryRow[]; items: MenuItem[] }>('/staff/menu');
+
+export const createItem = async (input: MenuItemInput) => (await api<{ item: MenuItem }>('/staff/menu/items', { method: 'POST', body: input })).item;
+
+export const updateItem = async (id: string, input: MenuItemInput) =>
+  (await api<{ item: MenuItem }>(`/staff/menu/items/${id}`, { method: 'PUT', body: input })).item;
+
+export const setItemAvailable = (id: string, available: boolean) =>
+  api<void>(`/staff/menu/items/${id}/availability`, { method: 'PATCH', body: { available } });
+
+export const archiveItem = (id: string) => api<void>(`/staff/menu/items/${id}`, { method: 'DELETE' });
+
+export const addCategory = async (name: LocalizedText) =>
+  (await api<{ category: MenuCategoryRow }>('/staff/menu/categories', { method: 'POST', body: { name } })).category;
+
+/** Uploads a photo the browser has already shrunk; returns the URL to store. */
+export async function uploadPhoto(kind: PhotoKind, photo: Blob): Promise<string> {
+  const form = new FormData();
+  form.append('file', photo, `photo.${photo.type.split('/')[1] ?? 'webp'}`);
+  return (await api<{ url: string }>(`/staff/uploads?kind=${kind}`, { method: 'POST', form })).url;
 }
 
-export async function setItemAvailable(itemId: string, available: boolean): Promise<void> {
-  await wait();
-  updateDb((db) => {
-    const item = db.items.find((i) => i.id === itemId);
-    if (item) item.available = available;
-  });
-}
+/* Tables and QR codes ------------------------------------------------------------- */
 
-export async function archiveItem(itemId: string): Promise<void> {
-  await wait();
-  updateDb((db) => {
-    const item = db.items.find((i) => i.id === itemId);
-    if (item) item.archived = true;
-  });
-}
+export const fetchQrTables = () => api<{ venue: Venue; tables: QrTable[] }>('/staff/qr');
 
-export async function addCategory(name: DbCategory['name']): Promise<DbCategory> {
-  await wait();
-  return updateDb((db) => {
-    const category = { id: newId(), name };
-    db.categories.push(category);
-    return category;
-  });
-}
+export const addTable = () => api<{ table: QrTable }>('/staff/tables', { method: 'POST' });
 
-/* Tables and QR codes ------------------------------------------------------- */
+export const resetQrToken = (tableId: string) => api<{ table: QrTable }>(`/staff/tables/${tableId}/reset-qr`, { method: 'POST' });
 
-export async function fetchQrTables(): Promise<{ tables: DbTable[]; venue: Venue }> {
-  await wait();
-  const db = readDb();
-  return { tables: [...db.tables].sort((a, b) => a.number - b.number), venue: db.venue };
-}
+/* Staff accounts ------------------------------------------------------------------ */
 
-function randomToken() {
-  return Array.from(crypto.getRandomValues(new Uint8Array(9)), (b) => b.toString(36).padStart(2, '0'))
-    .join('')
-    .slice(0, 12);
-}
+export const fetchStaff = async () => (await api<{ staff: StaffUser[] }>('/staff/team')).staff;
 
-/** Gives a table a new QR token; printed codes with the old one stop working at once. */
-export async function resetQrToken(tableId: string): Promise<void> {
-  await wait();
-  updateDb((db) => {
-    const table = db.tables.find((t) => t.id === tableId);
-    if (table) table.qrToken = randomToken();
-  });
-}
+export const addStaff = (input: { name: string; email: string; role: StaffRole }) =>
+  api<{ user: StaffUser; temporaryPassword: string }>('/staff/team', { method: 'POST', body: input });
 
-export async function addTable(): Promise<void> {
-  await wait();
-  updateDb((db) => {
-    const number = Math.max(0, ...db.tables.map((t) => t.number)) + 1;
-    db.tables.push({ id: newId(), number, qrToken: randomToken() });
-  });
-}
+export const removeStaff = (userId: string) => api<void>(`/staff/team/${userId}`, { method: 'DELETE' });
 
-/* Staff accounts ------------------------------------------------------------ */
+/* Venue settings ------------------------------------------------------------------ */
 
-export async function fetchStaff(): Promise<StaffUser[]> {
-  await wait();
-  return readDb().staff;
-}
+export const fetchVenue = async () => (await api<{ venue: Venue }>('/staff/venue')).venue;
 
-export async function addStaff(input: { name: string; email: string; role: StaffRole }): Promise<StaffUser> {
-  await wait(300);
-  return updateDb((db) => {
-    const user = { id: newId(), ...input };
-    db.staff.push(user);
-    return user;
-  });
-}
-
-export async function removeStaff(userId: string): Promise<void> {
-  await wait();
-  updateDb((db) => {
-    const user = db.staff.find((s) => s.id === userId);
-    if (user?.role === 'owner' && db.staff.filter((s) => s.role === 'owner').length === 1) throw new StaffApiError('last_owner');
-    db.staff = db.staff.filter((s) => s.id !== userId);
-  });
-}
-
-/* Venue settings ----------------------------------------------------------- */
-
-export async function fetchVenue(): Promise<Venue> {
-  await wait();
-  return readDb().venue;
-}
-
-export async function saveVenue(venue: Venue): Promise<void> {
-  await wait(300);
-  updateDb((db) => {
-    db.venue = venue;
-  });
-}
+export const saveVenue = async (settings: VenueSettingsInput) => (await api<{ venue: Venue }>('/staff/venue', { method: 'PUT', body: settings })).venue;

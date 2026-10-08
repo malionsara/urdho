@@ -37,6 +37,8 @@ export const router = createBrowserRouter([
         // Loaded separately so guests never download dashboard code.
         path: '/staff/*',
         lazy: async () => ({ Component: (await import('./staff/StaffApp')).StaffApp }),
+        // While the dashboard downloads on a first visit: its dark background, not a white flash.
+        HydrateFallback: () => <div aria-busy="true" style={{ minHeight: '100dvh', background: 'var(--ink)' }} />,
       },
       { path: '*', element: <NotFound /> },
     ],

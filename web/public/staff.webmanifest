@@ -1,0 +1,18 @@
+{
+  "id": "/staff/",
+  "name": "Urdho – Paneli i stafit",
+  "short_name": "Urdho",
+  "description": "Porositë, tavolinat dhe menuja e lokalit tuaj.",
+  "lang": "sq",
+  "start_url": "/staff/",
+  "scope": "/staff/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#17120f",
+  "theme_color": "#17120f",
+  "icons": [
+    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "/icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

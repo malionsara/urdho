@@ -6,7 +6,7 @@ import type { MenuItem } from '@shared/types';
 import { Icon } from '../../ui/Icon';
 import { KilimBand, KilimDiamond } from '../../ui/Kilim';
 import { DishImage } from '../../ui/primitives';
-import { BottomDock, LanguageSwitcher, PoweredBy, TagBadge, VenueLogo } from '../components';
+import { BottomDock, LanguageSwitcher, PoweredBy, ServiceBanner, TagBadge, VenueLogo } from '../components';
 import { useGuest } from '../GuestContext';
 import styles from './MenuScreen.module.css';
 
@@ -78,6 +78,7 @@ export function MenuScreen() {
       </header>
 
       <KilimBand />
+      <ServiceBanner />
 
       <nav className={styles.tabsBar} aria-label={t('menu.categories')}>
         <div className={styles.tabs} ref={tabsRef}>

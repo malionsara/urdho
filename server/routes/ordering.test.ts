@@ -301,7 +301,7 @@ describe('staff running service', () => {
   it('take payment and close the table: the old cookie stops working and the next guests start fresh', async () => {
     const v = await setup();
     const guest = await scan(v.table1);
-    await order(v.table1, guest.cookie, [{ itemId: v.qofte.id, qty: 2, optionIds: [v.portion.ten] }]);
+    const paidOrder = (await order(v.table1, guest.cookie, [{ itemId: v.qofte.id, qty: 2, optionIds: [v.portion.ten] }])).body?.orderId;
     await call('POST', `${v.table1}/calls`, { cookie: guest.cookie });
 
     const tables = (await call('GET', '/api/staff/tables', { cookie: v.waiter })).body?.tables;
@@ -322,6 +322,11 @@ describe('staff running service', () => {
 
     const nextGuests = await scan(v.table1);
     expect(nextGuests.cookie).not.toBe(guest.cookie);
+    // The same phone may load the menu again (and get the new session) before it checks its order.
+    const closed = { error: { code: 'session_closed' } };
+    expect((await call('GET', `${v.table1}/orders/${paidOrder}`, { cookie: guest.cookie })).body).toEqual(closed);
+    expect((await call('GET', `${v.table1}/orders/${paidOrder}`, { cookie: nextGuests.cookie })).body).toEqual(closed);
+    expect((await call('GET', `${v.table2}/orders/${paidOrder}`, { cookie: (await scan(v.table2)).cookie })).status).toBe(404);
     const fresh = await order(v.table1, nextGuests.cookie, [{ itemId: v.byrek.id, qty: 1, optionIds: [] }]);
     expect((await call('GET', `${v.table1}/orders/${fresh.body?.orderId}`, { cookie: nextGuests.cookie })).body?.sessionTotalLek).toBe(250);
 

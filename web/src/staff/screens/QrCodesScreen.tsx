@@ -3,17 +3,16 @@ import QRCode from 'qrcode';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { Venue } from '@shared/types';
-import type { DbTable } from '../../mock/db';
 import { Button } from '../../ui/Button';
 import { Icon } from '../../ui/Icon';
 import { KilimBand } from '../../ui/Kilim';
-import { addTable, resetQrToken } from '../api';
+import { addTable, resetQrToken, type QrTable } from '../api';
 import { ConfirmDialog, PageHeader, useStaffToast } from '../components';
 import { useQrTablesQuery, useStaffMutation } from '../queries';
 import staffStyles from '../staff.module.css';
 import styles from './QrCodesScreen.module.css';
 
-const tableUrl = (venue: Venue, table: DbTable) => `${window.location.origin}/${venue.slug}/t/${table.qrToken}`;
+const tableUrl = (venue: Venue, table: QrTable) => `${window.location.origin}/${venue.slug}/t/${table.qrToken}`;
 
 export function QrCodesScreen() {
   const { t } = useTranslation();
@@ -72,7 +71,7 @@ export function QrCodesScreen() {
   );
 }
 
-function TableCard({ venue, table, svg }: { venue: Venue; table: DbTable; svg: string | undefined }) {
+function TableCard({ venue, table, svg }: { venue: Venue; table: QrTable; svg: string | undefined }) {
   const { t } = useTranslation();
   const [primary, secondary] = [venue.defaultLanguage, venue.languages.find((l) => l !== venue.defaultLanguage)];
   return (
@@ -100,7 +99,7 @@ function TableCard({ venue, table, svg }: { venue: Venue; table: DbTable; svg: s
   );
 }
 
-function CardActions({ venue, table }: { venue: Venue; table: DbTable }) {
+function CardActions({ venue, table }: { venue: Venue; table: QrTable }) {
   const { t } = useTranslation();
   const toast = useStaffToast();
   const [confirm, setConfirm] = useState(false);

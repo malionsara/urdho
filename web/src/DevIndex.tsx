@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router';
-import { addDemoService, resetDemoData } from './devTools';
+import { addDemoService } from './devTools';
 import { Button } from './ui/Button';
 import { Icon, type IconName } from './ui/Icon';
 import { KilimBand } from './ui/Kilim';
@@ -28,9 +28,14 @@ export function DevIndex() {
 
   async function fill() {
     setBusy(true);
-    await addDemoService();
-    setBusy(false);
-    setDone(t('dev.filled'));
+    try {
+      await addDemoService();
+      setDone(t('dev.filled'));
+    } catch (error) {
+      setDone(t(`errors.api.${(error as Error).message}`, { defaultValue: t('errors.generic') }));
+    } finally {
+      setBusy(false);
+    }
   }
 
   return (
@@ -47,22 +52,12 @@ export function DevIndex() {
         <h2 className={styles.groupTitle}>{t('dev.staffGroup')}</h2>
         <LinkList links={STAFF_LINKS} />
         <p className={styles.tip}>{t('dev.tip')}</p>
+        <p className={styles.tip}>{t('dev.resetHint')}</p>
 
         <div className={styles.tools}>
           <Button onClick={() => void fill()} loading={busy}>
             <Icon name="receipt" size={18} />
             {t('dev.fill')}
-          </Button>
-          <Button
-            variant="outline"
-            className={styles.resetButton}
-            onClick={() => {
-              resetDemoData();
-              setDone(t('dev.reset'));
-            }}
-          >
-            <Icon name="refresh" size={18} />
-            {t('dev.resetButton')}
           </Button>
           {done && (
             <span className={styles.done} role="status">

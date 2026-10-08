@@ -42,7 +42,11 @@
     "payAtEnd": "Pay at the end",
     "viewBasket": "View basket",
     "items_one": "{{count}} item",
-    "items_other": "{{count}} items"
+    "items_other": "{{count}} items",
+    "closedTitle": "The kitchen is closed.",
+    "closedBody": "You can look at the menu; ordering opens again during opening hours.",
+    "offlineTitle": "No internet.",
+    "offlineBody": "You're seeing the saved menu. Ordering needs a connection."
   },
   "item": {
     "allergens": "Allergens",
@@ -88,7 +92,8 @@
     "note": "Note",
     "submit": "Place order",
     "sending": "Sending…",
-    "error": "Your order didn't go through. Check your connection and try again."
+    "error": "Your order didn't go through. Check your connection and try again.",
+    "soldOut": "Sold out in the meantime: {{dishes}}. We've taken it out of your basket."
   },
   "status": {
     "title": "Thank you!",
@@ -108,35 +113,94 @@
     "addMore": "Add more",
     "callWaiter": "Call the waiter",
     "waiterCalled": "We've let the waiter know",
-    "notFound": "We couldn't find this order."
+    "notFound": "We couldn't find this order.",
+    "closedTitle": "Table closed",
+    "closedBody": "The bill has been paid. Thank you for visiting!",
+    "orderAgain": "Order again"
   },
   "errors": {
     "tableTitle": "This code is no longer active",
     "tableBody": "Please ask a member of staff for help.",
     "generic": "Something went wrong. Please try again.",
-    "retry": "Try again"
+    "retry": "Try again",
+    "api": {
+      "network": "No internet connection. Check the network and try again.",
+      "internal": "Something went wrong on our side. Please try again in a moment.",
+      "unauthorized": "Your session ended. Please sign in again.",
+      "forbidden": "You don't have permission to do that.",
+      "not_found": "Not found. It may have just changed.",
+      "invalid_request": "Some fields aren't filled in correctly.",
+      "invalid_json": "The request couldn't be read. Please try again.",
+      "table_invalid": "This code is no longer active. Please ask a member of staff.",
+      "no_session": "Please scan the table's code again.",
+      "session_closed": "This table was closed. Scan the code again to order.",
+      "menu_changed": "The menu changed in the meantime.",
+      "invalid_options": "Some options aren't available any more. Please choose again.",
+      "venue_closed": "The kitchen is closed right now. Please order during opening hours.",
+      "too_many_orders": "Too many orders from this table at once. Please ask your waiter.",
+      "invalid_login": "That email or password isn't right.",
+      "password_change_required": "Please choose your own password first.",
+      "wrong_password": "Your current password isn't right.",
+      "same_password": "The new password must be different from the old one.",
+      "email_taken": "That email already has an account.",
+      "last_owner": "The venue needs at least one owner.",
+      "cannot_remove_self": "You can't remove your own account.",
+      "category_not_empty": "The category still has dishes. Move or archive them first.",
+      "unknown_category": "That category doesn't exist any more.",
+      "unknown_option_group": "An option group doesn't exist any more. Open the dish again.",
+      "unknown_option": "An option doesn't exist any more. Open the dish again.",
+      "nothing_to_pay": "This table has nothing to pay.",
+      "unpaid_bill": "This table still has an unpaid bill.",
+      "invalid_transition": "The order changed in the meantime. Refresh.",
+      "file_too_large": "That photo is too big.",
+      "not_an_image": "That file isn't a photo.",
+      "missing_file": "Choose a photo.",
+      "invalid_kind": "Unknown kind of photo."
+    }
   },
   "dev": {
     "title": "Design review",
-    "lead": "Every screen and state on demo data. The guest app and the staff dashboard share the same data in this browser.",
+    "lead": "Every screen and state, on the demo data in the database. The guest app and the staff dashboard talk to the same API.",
     "guestGroup": "Guest app",
     "staffGroup": "Staff dashboard",
     "tip": "Try it: open the dashboard in one tab and the menu in another. Order from the menu and watch it arrive on the board with a chime.",
     "fill": "Add a demo service",
-    "filled": "Added 4 orders and a waiter call",
+    "filled": "Added 3 orders and a waiter call",
     "resetButton": "Reset demo data",
     "reset": "Demo data reset",
     "staffSoonTitle": "Staff dashboard",
     "staffSoonBody": "Designed in milestone 3.",
     "links": {
-      "menu": { "title": "Guest app, table 4", "body": "Menu, item, basket, checkout and live order status" },
-      "green": { "title": "Same, in a deep green brand", "body": "Proves each venue's colour themes the whole app" },
-      "item": { "title": "Item with options", "body": "Required size, extras, leave-out choices and a sold-out extra" },
-      "empty": { "title": "Empty basket", "body": "Table 6, nothing added yet" },
-      "loading": { "title": "Loading state", "body": "Slows the demo data down so the skeleton shows" },
-      "invalid": { "title": "Old or invalid QR code", "body": "What a guest sees after staff reset a table's code" },
-      "staff": { "title": "Staff dashboard", "body": "Sign in as owner, manager or waiter" }
-    }
+      "menu": {
+        "title": "Guest app, table 4",
+        "body": "Menu, item, basket, checkout and live order status"
+      },
+      "green": {
+        "title": "Same, in a deep green brand",
+        "body": "Proves each venue's colour themes the whole app"
+      },
+      "item": {
+        "title": "Item with options",
+        "body": "Required size, extras, leave-out choices and a sold-out extra"
+      },
+      "empty": {
+        "title": "Empty basket",
+        "body": "Table 6, nothing added yet"
+      },
+      "loading": {
+        "title": "Loading state",
+        "body": "Slows every API call down so the skeleton shows"
+      },
+      "invalid": {
+        "title": "Old or invalid QR code",
+        "body": "What a guest sees after staff reset a table's code"
+      },
+      "staff": {
+        "title": "Staff dashboard",
+        "body": "Sign in as owner, manager or waiter"
+      }
+    },
+    "resetHint": "To start over: pnpm db:reset"
   },
   "staff": {
     "nav": {
@@ -178,7 +242,7 @@
       "submitting": "Signing in…",
       "error": "That email or password isn't right.",
       "demoTitle": "Demo accounts",
-      "demoBody": "One tap to sign in with each role."
+      "demoBody": "One tap to sign in with each role (development machine only)."
     },
     "start": {
       "title": "Ready for service?",
@@ -202,6 +266,7 @@
       "cardLabel": "Order from table {{number}}",
       "tableShort": "Table",
       "servedAt": "Served {{time}} ago",
+      "servedJustNow": "Served just now",
       "cancel": "Cancel",
       "newTable": "New table.",
       "newTableHint": "Check the guests are seated.",
@@ -232,7 +297,9 @@
       "methodCash": "cash",
       "methodCard": "card",
       "closeConfirm": "Close table",
-      "closed": "Table {{number}} closed"
+      "closed": "Table {{number}} closed",
+      "clear": "Clear table",
+      "cleared": "Table {{number}} cleared"
     },
     "menu": {
       "title": "Menu",
@@ -314,7 +381,8 @@
       "name": "Full name",
       "email": "Email",
       "role": "Role",
-      "create": "Create account"
+      "create": "Create account",
+      "emailTaken": "That email already has an account, here or at another venue."
     },
     "settings": {
       "title": "Settings",
@@ -349,6 +417,21 @@
       "discard": "Discard",
       "save": "Save changes",
       "saved": "Settings saved"
+    },
+    "password": {
+      "title": "Choose your password",
+      "firstTime": "This is your first sign-in. Replace the temporary password with one only you know.",
+      "body": "Choose a new password.",
+      "temporary": "Temporary password",
+      "current": "Current password",
+      "new": "New password",
+      "repeat": "Repeat the new password",
+      "hint": "At least {{count}} characters.",
+      "submit": "Save password",
+      "tooShort": "The password needs at least {{count}} characters.",
+      "mismatch": "The two new passwords don't match.",
+      "wrongCurrent": "Your current password isn't right.",
+      "same": "The new password must be different from the old one."
     }
   }
 }

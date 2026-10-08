@@ -22,6 +22,8 @@ Changes from the first draft, made before the build starts. Revert any you disag
 - Guest app look (after the first design review): bold and photo-first in the spirit of the Nando's eat-in flow, with Urdho's own identity: Albanian kilim patterns, a dark navigation bar, a saffron accent, a chunky display font, and a cover photo per venue (`cover_url`).
 - The project rules and kickoff prompt moved to `CLAUDE.md` and `docs/KICKOFF.md`.
 - Database (milestone 4): the `option` table is named `menu_option`; tags and allergens are database enums; one open session per table and one unanswered waiter call per session are enforced by unique indexes.
+- Live updates (milestone 8): an open guest menu also refreshes every minute, so dishes that sell out grey out without a reload. Polling pauses while a tab is hidden. After payment, the guest's status page says the table is closed, even if the phone has since joined the next session at that table.
+- PWA (milestone 8): only the staff dashboard is installable (its manifest is linked from `/staff` alone), so guests are never offered to install the staff app. The service worker caches the guest app shell and photos, never API responses; the menu itself is kept on the phone by the app. New versions take over without reloading an open board.
 
 ## Overview
 
@@ -138,7 +140,7 @@ Both apps talk only to the API, which owns tenancy, orders and payments. The dot
 | Front end | React + Vite, installable as a PWA | Loads fast on phones; staff can install it on a tablet |
 | API | Hono (TypeScript) on Vercel Functions | Small and quick to start, which matters on serverless; easy to test without running a server |
 | Database | PostgreSQL: Neon in production, Docker on the dev machine | Transactions for orders and payments; row-level security later as a safety net; Neon branches for preview deploys |
-| Live updates | Short polling behind one interface: the board every 3 seconds, the guest status page every 5 | Works on Vercel with no extra service. A push service (Pusher, Ably or Upstash) can replace it later without touching the screens |
+| Live updates | Short polling behind one interface: the board every 3 seconds, the guest status page every 5, an open menu every 60 | Works on Vercel with no extra service. A push service (Pusher, Ably or Upstash) can replace it later without touching the screens |
 | Staff auth | Email and password with session tokens, role checks per route | Three roles, no social login needed |
 | Guest identity | None; a table session token in a cookie | Keeps ordering to one scan and no signup |
 | Photos | Vercel Blob | Lives next to the app; resized on upload |

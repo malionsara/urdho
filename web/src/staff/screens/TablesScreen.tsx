@@ -5,7 +5,7 @@ import type { PaymentMethod } from '@shared/types';
 import { Button } from '../../ui/Button';
 import { Icon } from '../../ui/Icon';
 import { KilimBand } from '../../ui/Kilim';
-import { markSessionPaid, type TableSummary } from '../api';
+import { closeEmptySession, markSessionPaid, type TableSummary } from '../api';
 import { ConfirmDialog, PageHeader, Sheet, useElapsed, useNow, useStaffText, useStaffToast } from '../components';
 import { useStaffMutation, useTablesQuery, useVenueQuery } from '../queries';
 import staffStyles from '../staff.module.css';
@@ -99,6 +99,7 @@ function TableSheet({ summary, onClose }: { summary: TableSummary | null; onClos
   const nowMs = useNow();
   const [method, setMethod] = useState<PaymentMethod | null>(null);
   const pay = useStaffMutation(({ sessionId, m }: { sessionId: string; m: PaymentMethod }) => markSessionPaid(sessionId, m));
+  const clear = useStaffMutation(closeEmptySession);
 
   const number = summary?.table.number ?? 0;
   const orders = summary?.orders ?? [];
@@ -124,7 +125,25 @@ function TableSheet({ summary, onClose }: { summary: TableSummary | null; onClos
       onClose={onClose}
       footer={
         summary?.session &&
-        summary.billLek > 0 && (
+        (summary.billLek === 0 ? (
+          // Guests only called the waiter, or every order was cancelled: nothing to pay, just clear it.
+          <Button
+            variant="outline"
+            size="lg"
+            block
+            loading={clear.isPending}
+            onClick={() =>
+              clear.mutate(summary.session!.id, {
+                onSuccess: () => {
+                  toast(t('staff.tables.cleared', { number }));
+                  onClose();
+                },
+              })
+            }
+          >
+            {t('staff.tables.clear')}
+          </Button>
+        ) : (
           <div className={styles.payFooter}>
             <div className={styles.payTotal}>
               <span>{t('staff.tables.bill')}</span>
@@ -141,7 +160,7 @@ function TableSheet({ summary, onClose }: { summary: TableSummary | null; onClos
               </Button>
             </div>
           </div>
-        )
+        ))
       }
     >
       {summary?.session && (

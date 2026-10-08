@@ -2,11 +2,12 @@ import { useState, type ChangeEvent, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { LANGUAGES, type Language, type OpeningDay, type Venue } from '@shared/types';
 import { brandStyle, parseHex } from '../../lib/brand';
-import { resizeImage } from '../../lib/image';
+import { resizeImageToBlob } from '../../lib/image';
 import { Button } from '../../ui/Button';
 import { Icon } from '../../ui/Icon';
 import { KilimBand } from '../../ui/Kilim';
-import { saveVenue } from '../api';
+import { Notice } from '../../ui/primitives';
+import { saveVenue, uploadPhoto } from '../api';
 import { PageHeader, Switch, useStaffToast } from '../components';
 import { useStaffMutation, useVenueQuery } from '../queries';
 import staffStyles from '../staff.module.css';
@@ -26,14 +27,25 @@ function SettingsForm({ initial }: { initial: Venue }) {
   const toast = useStaffToast();
   const [venue, setVenue] = useState(initial);
   const [hex, setHex] = useState(initial.brandColor);
-  const save = useStaffMutation(saveVenue);
+  // Only the editable fields go to the server; id and slug are fixed.
+  const save = useStaffMutation(({ name, logoUrl, coverUrl, brandColor, languages, defaultLanguage, timezone, openingHours }: Venue) =>
+    saveVenue({ name, logoUrl, coverUrl, brandColor, languages, defaultLanguage, timezone, openingHours }),
+  );
+  const [uploadError, setUploadError] = useState<string | null>(null);
   const dirty = JSON.stringify(venue) !== JSON.stringify(initial);
   const patch = (changes: Partial<Venue>) => setVenue((v) => ({ ...v, ...changes }));
 
   async function upload(e: ChangeEvent<HTMLInputElement>, field: 'logoUrl' | 'coverUrl') {
     const file = e.target.files?.[0];
-    if (file) patch({ [field]: await resizeImage(file, field === 'coverUrl' ? 1200 : 400) });
     e.target.value = '';
+    if (!file) return;
+    setUploadError(null);
+    try {
+      const kind = field === 'coverUrl' ? 'cover' : 'logo';
+      patch({ [field]: await uploadPhoto(kind, await resizeImageToBlob(file, kind === 'cover' ? 2000 : 800)) });
+    } catch (err) {
+      setUploadError(t(`errors.api.${(err as Error).message}`, { defaultValue: t('errors.generic') }));
+    }
   }
 
   function setColour(value: string) {
@@ -76,6 +88,8 @@ function SettingsForm({ initial }: { initial: Venue }) {
                   <UploadButtons hasImage={!!venue.coverUrl} onFile={(e) => void upload(e, 'coverUrl')} onRemove={() => patch({ coverUrl: null })} />
                 </div>
               </div>
+
+              {uploadError && <Notice icon="info">{uploadError}</Notice>}
 
               <div className={styles.colourField}>
                 <span className={styles.labelText}>{t('staff.settings.colour')}</span>
@@ -177,6 +191,7 @@ function SettingsForm({ initial }: { initial: Venue }) {
         <Button variant="outline" onClick={() => setVenue(initial)}>
           {t('staff.settings.discard')}
         </Button>
+        {save.error && <span className={styles.saveError}>{t(`errors.api.${save.error.message}`, { defaultValue: t('errors.generic') })}</span>}
         <Button onClick={() => save.mutate(venue, { onSuccess: () => toast(t('staff.settings.saved')) })} loading={save.isPending}>
           {t('staff.settings.save')}
         </Button>

@@ -22,7 +22,7 @@ export function GuestLayout() {
   if (menu.isError) {
     return (
       <GuestShell brand={override}>
-        <GuestLoadError code={menu.error.message} onRetry={() => void menu.refetch()} />
+        <GuestLoadError code={(menu.error as Error).message} onRetry={() => void menu.refetch()} />
       </GuestShell>
     );
   }

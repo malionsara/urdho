@@ -1,8 +1,8 @@
 /**
- * Shrinks an uploaded photo in the browser before it is stored. The real upload (milestone 6)
- * resizes on the server too; this keeps the demo's localStorage small.
+ * Shrinks a photo in the browser before upload. Phone photos are often larger than the API's
+ * upload limit, and smaller files upload faster on a venue's Wi-Fi; the server resizes again.
  */
-export async function resizeImage(file: File, maxWidth = 800, quality = 0.8): Promise<string> {
+export async function resizeImageToBlob(file: File, maxWidth: number, quality = 0.85): Promise<Blob> {
   const bitmap = await createImageBitmap(file);
   const scale = Math.min(1, maxWidth / bitmap.width);
   const canvas = document.createElement('canvas');
@@ -10,5 +10,7 @@ export async function resizeImage(file: File, maxWidth = 800, quality = 0.8): Pr
   canvas.height = Math.round(bitmap.height * scale);
   canvas.getContext('2d')?.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
   bitmap.close();
-  return canvas.toDataURL('image/webp', quality);
+  return new Promise((resolve, reject) =>
+    canvas.toBlob((blob) => (blob ? resolve(blob) : reject(new Error('not_an_image'))), 'image/webp', quality),
+  );
 }

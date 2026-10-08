@@ -17,6 +17,29 @@
   padding: var(--space-5) var(--space-6) var(--space-8);
 }
 
+/* Splash while the session is checked */
+.splash {
+  display: grid;
+  place-items: center;
+  min-height: 100dvh;
+  background: var(--ink);
+}
+
+.splashDot {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--saffron);
+  animation: splash 1s ease-in-out infinite alternate;
+}
+
+@keyframes splash {
+  to {
+    transform: scale(1.8);
+    opacity: 0.4;
+  }
+}
+
 /* Rail */
 .rail {
   position: sticky;

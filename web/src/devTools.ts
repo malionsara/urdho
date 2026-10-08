@@ -1,57 +1,35 @@
-import { callWaiter, placeOrder } from './guest/api';
-import { resetDb, updateDb } from './mock/db';
+import { DEMO_SLUG } from '@shared/demo';
+import { callWaiter, fetchMenu, placeOrder } from './guest/api';
 
 /*
- * Design-review helpers: fill the staff board with a realistic service, or start clean.
- * Orders go through the guest API, exactly as a guest's phone would send them.
+ * Design-review helper: fills the demo venue's board through the real guest API, exactly as
+ * guests' phones would. To start over, run `pnpm db:reset`.
  */
 
-const minutesAgo = (min: number) => new Date(Date.now() - min * 60_000).toISOString();
+export async function addDemoService(): Promise<void> {
+  const menu = await fetchMenu(DEMO_SLUG, 'demo-1');
+  const dishes = new Map(menu.categories.flatMap((c) => c.items).map((i) => [i.name.sq ?? '', i]));
+  const pick = (name: string, optionNames: string[] = []) => {
+    const item = dishes.get(name);
+    if (!item) return [];
+    const optionIds = item.optionGroups.flatMap((g) => g.options).filter((o) => optionNames.includes(o.name.sq ?? '')).map((o) => o.id);
+    return [{ itemId: item.id, optionIds }];
+  };
+  const order = async (table: number, guestName: string, note: string, lines: { itemId: string; optionIds: string[]; qty: number }[]) => {
+    await fetchMenu(DEMO_SLUG, `demo-${table}`);
+    await placeOrder(DEMO_SLUG, `demo-${table}`, { clientRef: crypto.randomUUID(), guestName, note, lines });
+  };
 
-export async function addDemoService() {
-  const order = (table: number, guestName: string, note: string, lines: [string, number, string[]][]) =>
-    placeOrder('demo', `demo-${table}`, {
-      clientRef: crypto.randomUUID(),
-      guestName,
-      note,
-      lines: lines.map(([itemId, qty, optionIds]) => ({ itemId, qty, optionIds })),
-    });
-
-  const served = await order(3, 'Tom', '', [
-    ['i-bakllava', 2, []],
-    ['i-trilece', 1, []],
-  ]);
-  const preparing = await order(1, 'Elira', '', [
-    ['i-byrek', 2, []],
-    ['i-fergese', 1, []],
-  ]);
-  const waiting = await order(2, 'Arben', '', [
-    ['i-tave-kosi', 2, []],
-    ['i-sallate', 1, ['o-sallate-no-onion']],
-    ['i-birre', 2, ['o-birre-50']],
+  await order(2, 'Arben', '', [
+    ...pick('Tavë kosi').map((l) => ({ ...l, qty: 2 })),
+    ...pick('Sallatë fshati', ['Pa qepë']).map((l) => ({ ...l, qty: 1 })),
+    ...pick('Birrë Tirana', ['50 cl']).map((l) => ({ ...l, qty: 2 })),
   ]);
   await order(5, '', 'Alergji nga arrat, ju lutem kujdes', [
-    ['i-qofte', 1, ['o-qofte-10', 'o-qofte-fries']],
-    ['i-dhalle', 2, []],
+    ...pick('Qofte të fshira', ['10 copë', 'Patate të skuqura']).map((l) => ({ ...l, qty: 1 })),
+    ...pick('Dhallë').map((l) => ({ ...l, qty: 2 })),
   ]);
-  await callWaiter('demo', 'demo-6');
-
-  // Spread them out in time so every column and timer colour shows.
-  updateDb((db) => {
-    for (const o of db.orders) {
-      if (o.id === served.orderId) Object.assign(o, { status: 'served', createdAt: minutesAgo(32), statusChangedAt: minutesAgo(5) });
-      if (o.id === preparing.orderId) Object.assign(o, { status: 'preparing', createdAt: minutesAgo(19), statusChangedAt: minutesAgo(17) });
-      if (o.id === waiting.orderId) Object.assign(o, { createdAt: minutesAgo(4), statusChangedAt: minutesAgo(4) });
-    }
-    for (const s of db.sessions) if (s.closedAt === null && db.orders.some((o) => o.sessionId === s.id)) s.openedAt = minutesAgo(40);
-  });
-}
-
-export function resetDemoData() {
-  resetDb();
-  try {
-    for (const key of Object.keys(localStorage)) if (key.startsWith('urdho-basket:')) localStorage.removeItem(key);
-  } catch {
-    // ignore
-  }
+  await order(1, 'Elira', '', [...pick('Byrek me spinaq').map((l) => ({ ...l, qty: 2 })), ...pick('Fërgesë Tirane').map((l) => ({ ...l, qty: 1 }))]);
+  await fetchMenu(DEMO_SLUG, 'demo-6');
+  await callWaiter(DEMO_SLUG, 'demo-6');
 }

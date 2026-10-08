@@ -2,16 +2,16 @@ import { useState, type ChangeEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ALLERGENS } from '@shared/allergens';
 import { formatLek } from '@shared/money';
-import type { ItemTag, Language, LocalizedText, MenuOption, MenuOptionGroup } from '@shared/types';
-import { resizeImage } from '../../lib/image';
-import type { DbItem } from '../../mock/db';
+import type { MenuItemInput } from '@shared/schemas';
+import type { ItemTag, Language, LocalizedText, MenuItem, MenuOption, MenuOptionGroup } from '@shared/types';
+import { resizeImageToBlob } from '../../lib/image';
 import { Button, ButtonLink } from '../../ui/Button';
 import { Icon } from '../../ui/Icon';
 import { KilimBand } from '../../ui/Kilim';
 import { DishImage, Notice } from '../../ui/primitives';
-import { addCategory, archiveItem, saveItem, setItemAvailable } from '../api';
+import { addCategory, archiveItem, createItem, setItemAvailable, updateItem, uploadPhoto } from '../api';
 import { ConfirmDialog, PageHeader, Switch, useStaffText, useStaffToast } from '../components';
-import { useMenuAdminQuery, useQrTablesQuery, useStaffMutation } from '../queries';
+import { useMenuAdminQuery, useQrTablesQuery, useStaffMutation, useVenueQuery } from '../queries';
 import staffStyles from '../staff.module.css';
 import styles from './MenuManagerScreen.module.css';
 
@@ -20,22 +20,25 @@ const TAGS: ItemTag[] = ['vegetarian', 'spicy', 'new'];
 export function MenuManagerScreen() {
   const { t } = useTranslation();
   const menu = useMenuAdminQuery();
+  const venueQuery = useVenueQuery();
   const qr = useQrTablesQuery();
-  const text = useStaffText(menu.data?.venue);
+  const text = useStaffText(venueQuery.data);
   const [categoryId, setCategoryId] = useState<string | null>(null);
-  const [draft, setDraft] = useState<DbItem | null>(null);
+  const [draft, setDraft] = useState<MenuItem | null>(null);
   const [newCategory, setNewCategory] = useState<string | null>(null);
   const toggle = useStaffMutation(({ id, on }: { id: string; on: boolean }) => setItemAvailable(id, on));
   const createCategory = useStaffMutation(addCategory);
 
-  if (!menu.data) return <p className={staffStyles.loading}>{t('common.loading')}</p>;
-  const { categories, items, venue } = menu.data;
+  if (!menu.data || !venueQuery.data) return <p className={staffStyles.loading}>{t('common.loading')}</p>;
+  const { categories, items } = menu.data;
+  const venue = venueQuery.data;
   const activeCategory = categoryId ?? categories[0]?.id ?? null;
   const list = items.filter((i) => i.categoryId === activeCategory);
   const guestLink = qr.data?.tables[0] ? `/${venue.slug}/t/${qr.data.tables[0].qrToken}` : null;
 
   function startNewItem() {
     if (!activeCategory) return;
+    // The id only tracks the draft in the editor; the server gives the dish its real one.
     setDraft({
       id: crypto.randomUUID(),
       categoryId: activeCategory,
@@ -48,7 +51,6 @@ export function MenuManagerScreen() {
       tags: [],
       allergens: [],
       optionGroups: [],
-      archived: false,
     });
   }
 
@@ -178,8 +180,40 @@ export function MenuManagerScreen() {
   );
 }
 
+/**
+ * The request body for saving a dish. Groups and options that existed when the editor opened keep
+ * their ids (the server updates them); ones added in the editor go without (the server creates them).
+ */
+function toInput(item: MenuItem, original: MenuItem | null): MenuItemInput {
+  const knownGroups = new Set(original?.optionGroups.map((g) => g.id));
+  const knownOptions = new Set(original?.optionGroups.flatMap((g) => g.options.map((o) => o.id)));
+  return {
+    categoryId: item.categoryId,
+    name: item.name,
+    description: item.description,
+    priceLek: item.priceLek,
+    photoUrl: item.photoUrl,
+    available: item.available,
+    suggestInBasket: item.suggestInBasket,
+    tags: item.tags,
+    allergens: item.allergens,
+    optionGroups: item.optionGroups.map((group) => ({
+      ...(knownGroups.has(group.id) ? { id: group.id } : {}),
+      name: group.name,
+      minSelect: group.minSelect,
+      maxSelect: group.maxSelect,
+      options: group.options.map((option) => ({
+        ...(knownOptions.has(option.id) ? { id: option.id } : {}),
+        name: option.name,
+        priceDeltaLek: option.priceDeltaLek,
+        available: option.available,
+      })),
+    })),
+  };
+}
+
 interface EditorProps {
-  initial: DbItem;
+  initial: MenuItem;
   languages: Language[];
   defaultLanguage: Language;
   isNew: boolean;
@@ -193,17 +227,28 @@ function ItemEditor({ initial, languages, defaultLanguage, isNew, onDone }: Edit
   const [lang, setLang] = useState<Language>(defaultLanguage);
   const [error, setError] = useState<string | null>(null);
   const [confirmArchive, setConfirmArchive] = useState(false);
-  const save = useStaffMutation(saveItem);
+  const save = useStaffMutation((draft: MenuItem) => (isNew ? createItem(toInput(draft, null)) : updateItem(draft.id, toInput(draft, initial))));
   const archive = useStaffMutation(archiveItem);
+  const [uploading, setUploading] = useState(false);
   const dirty = JSON.stringify(item) !== JSON.stringify(initial);
 
-  const patch = (changes: Partial<DbItem>) => setItem((current) => ({ ...current, ...changes }));
+  const patch = (changes: Partial<MenuItem>) => setItem((current) => ({ ...current, ...changes }));
   const setText = (field: 'name' | 'description', value: string) => patch({ [field]: { ...item[field], [lang]: value } });
 
   async function onPhoto(e: ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
-    if (file) patch({ photoUrl: await resizeImage(file) });
     e.target.value = '';
+    if (!file) return;
+    setUploading(true);
+    setError(null);
+    try {
+      // Shrunk in the browser first: phone photos are often bigger than the upload limit.
+      patch({ photoUrl: await uploadPhoto('dish', await resizeImageToBlob(file, 1600)) });
+    } catch (err) {
+      setError(t(`errors.api.${(err as Error).message}`, { defaultValue: t('errors.generic') }));
+    } finally {
+      setUploading(false);
+    }
   }
 
   function submit() {
@@ -218,6 +263,7 @@ function ItemEditor({ initial, languages, defaultLanguage, isNew, onDone }: Edit
         toast(t('staff.menu.saved'));
         onDone();
       },
+      onError: (err) => setError(t(`errors.api.${err.message}`, { defaultValue: t('errors.generic') })),
     });
   }
 
@@ -237,7 +283,7 @@ function ItemEditor({ initial, languages, defaultLanguage, isNew, onDone }: Edit
           <div className={styles.photoActions}>
             <label className={styles.fileButton}>
               <Icon name="image" size={18} />
-              {item.photoUrl ? t('staff.menu.changePhoto') : t('staff.menu.addPhoto')}
+              {uploading ? t('common.loading') : item.photoUrl ? t('staff.menu.changePhoto') : t('staff.menu.addPhoto')}
               <input type="file" accept="image/*" className="visually-hidden" onChange={(e) => void onPhoto(e)} />
             </label>
             {item.photoUrl && (

@@ -5,7 +5,8 @@ import { Button } from '../../ui/Button';
 import { Icon } from '../../ui/Icon';
 import { KilimBand } from '../../ui/Kilim';
 import { Notice, TextField } from '../../ui/primitives';
-import { addStaff, removeStaff, StaffApiError } from '../api';
+import { isApiError } from '../../lib/http';
+import { addStaff, removeStaff } from '../api';
 import { ConfirmDialog, PageHeader, Sheet, useStaffToast } from '../components';
 import { useStaffListQuery, useStaffMutation } from '../queries';
 import { useStaff } from '../session';
@@ -13,14 +14,6 @@ import staffStyles from '../staff.module.css';
 import styles from './TeamScreen.module.css';
 
 const ROLES: StaffRole[] = ['owner', 'manager', 'waiter'];
-
-/** A temporary password the owner reads out; the person changes it on first sign-in. */
-function temporaryPassword() {
-  const alphabet = 'abcdefghjkmnpqrstuvwxyz23456789';
-  const bytes = crypto.getRandomValues(new Uint8Array(9));
-  const chars = Array.from(bytes, (b) => alphabet[b % alphabet.length]).join('');
-  return `${chars.slice(0, 3)}-${chars.slice(3, 6)}-${chars.slice(6, 9)}`;
-}
 
 export function TeamScreen() {
   const { t } = useTranslation();
@@ -91,7 +84,7 @@ export function TeamScreen() {
       <ConfirmDialog
         open={removing !== null}
         title={t('staff.team.removeTitle', { name: removing?.name ?? '' })}
-        body={remove.error instanceof StaffApiError && remove.error.code === 'last_owner' ? t('staff.team.lastOwner') : t('staff.team.removeBody')}
+        body={isApiError(remove.error, 'last_owner') ? t('staff.team.lastOwner') : t('staff.team.removeBody')}
         confirmLabel={t('staff.team.removeConfirm')}
         cancelLabel={t('staff.common.keep')}
         tone="danger"
@@ -120,16 +113,16 @@ function AddMemberSheet({ open, onClose }: { open: boolean; onClose: () => void 
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [role, setRole] = useState<StaffRole>('waiter');
-  const [password, setPassword] = useState(temporaryPassword);
-  const [created, setCreated] = useState<StaffUser | null>(null);
+  // The server makes the temporary password and returns it once, here.
+  const [created, setCreated] = useState<{ user: StaffUser; temporaryPassword: string } | null>(null);
   const add = useStaffMutation(addStaff);
 
   function close() {
     setName('');
     setEmail('');
     setRole('waiter');
-    setPassword(temporaryPassword());
     setCreated(null);
+    add.reset();
     onClose();
   }
 
@@ -138,9 +131,9 @@ function AddMemberSheet({ open, onClose }: { open: boolean; onClose: () => void 
     add.mutate(
       { name: name.trim(), email: email.trim(), role },
       {
-        onSuccess: (user) => {
-          setCreated(user);
-          toast(t('staff.team.added', { name: user.name }));
+        onSuccess: (result) => {
+          setCreated(result);
+          toast(t('staff.team.added', { name: result.user.name }));
         },
       },
     );
@@ -152,7 +145,7 @@ function AddMemberSheet({ open, onClose }: { open: boolean; onClose: () => void 
         <div className={styles.created}>
           <Notice icon="lock">{t('staff.team.passwordHint')}</Notice>
           <p className={styles.createdLabel}>{t('staff.team.tempPassword')}</p>
-          <p className={styles.password}>{password}</p>
+          <p className={styles.password}>{created.temporaryPassword}</p>
           <Button variant="dark" block onClick={close}>
             {t('staff.common.done')}
           </Button>
@@ -173,6 +166,9 @@ function AddMemberSheet({ open, onClose }: { open: boolean; onClose: () => void 
               </label>
             ))}
           </fieldset>
+          {add.error && (
+            <Notice icon="info">{isApiError(add.error, 'email_taken') ? t('staff.team.emailTaken') : t(`errors.api.${add.error.message}`, { defaultValue: t('errors.generic') })}</Notice>
+          )}
           <Button type="submit" size="lg" block loading={add.isPending}>
             {t('staff.team.create')}
           </Button>

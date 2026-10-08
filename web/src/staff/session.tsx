@@ -1,12 +1,15 @@
+import { useQueryClient } from '@tanstack/react-query';
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
-import type { StaffRole, StaffUser } from '@shared/types';
+import type { StaffRole } from '@shared/types';
+import { isApiError } from '../lib/http';
+import { logout, type StaffMe } from './api';
+import { ME_KEY, useMeQuery } from './queries';
 
 /*
- * Who is signed in, and whether service has started on this screen. Service lives in memory
- * only: after a reload the browser needs a fresh tap before it may play sound again.
+ * Who is signed in (from the session cookie, via /api/staff/me) and whether service has started on
+ * this screen. Service lives in memory only: after a reload the browser needs a fresh tap before it
+ * may play sound again.
  */
-
-const USER_KEY = 'urdho-staff-user';
 
 export const ROLE_PAGES: Record<StaffRole, string[]> = {
   owner: ['orders', 'tables', 'menu', 'qr', 'team', 'settings'],
@@ -17,9 +20,12 @@ export const ROLE_PAGES: Record<StaffRole, string[]> = {
 type ChimeKind = 'order' | 'call';
 
 interface StaffSession {
-  user: StaffUser | null;
-  signIn: (user: StaffUser) => void;
-  signOut: () => void;
+  user: StaffMe['user'] | null;
+  /** True until we know whether this device is signed in. */
+  loading: boolean;
+  signIn: (me: StaffMe) => void;
+  signOut: () => Promise<void>;
+  passwordChanged: () => void;
   can: (page: string) => boolean;
   service: {
     on: boolean;
@@ -36,15 +42,6 @@ export function useStaff(): StaffSession {
   const value = useContext(StaffSessionContext);
   if (!value) throw new Error('useStaff must be used inside StaffSessionProvider');
   return value;
-}
-
-function readUser(): StaffUser | null {
-  try {
-    const raw = sessionStorage.getItem(USER_KEY);
-    return raw ? (JSON.parse(raw) as StaffUser) : null;
-  } catch {
-    return null;
-  }
 }
 
 /** Two rising notes for a new order, three quick ones for a waiter call. */
@@ -67,11 +64,40 @@ function playChime(ctx: AudioContext, kind: ChimeKind) {
 }
 
 export function StaffSessionProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<StaffUser | null>(readUser);
+  const queryClient = useQueryClient();
+  const me = useMeQuery();
   const [serviceOn, setServiceOn] = useState(false);
   const [muted, setMuted] = useState(false);
   const audio = useRef<AudioContext | null>(null);
   const wakeLock = useRef<WakeLockSentinel | null>(null);
+  const user = me.data?.user ?? null;
+
+  /** Forgets who is signed in on this device, which sends every page back to the login screen. */
+  const forgetDevice = useCallback(() => {
+    void wakeLock.current?.release();
+    setServiceOn(false);
+    // The account first: removing it from under the screens watching it would leave them stuck.
+    queryClient.setQueryData(ME_KEY, null);
+    queryClient.removeQueries({ queryKey: ['staff'], predicate: (q) => q.queryKey[1] !== 'me' });
+  }, [queryClient]);
+
+  // Signed out somewhere else (account removed, session ended on the server): the first refusal
+  // from the API sends this device to the login screen, instead of leaving it showing errors.
+  useEffect(() => {
+    const onError = (error: unknown) => {
+      if (isApiError(error, 'unauthorized')) setTimeout(forgetDevice, 0);
+    };
+    const stopQueries = queryClient.getQueryCache().subscribe((event) => {
+      if (event.type === 'updated' && event.action.type === 'error' && event.query.queryKey[0] === 'staff') onError(event.action.error);
+    });
+    const stopMutations = queryClient.getMutationCache().subscribe((event) => {
+      if (event.type === 'updated' && event.action.type === 'error') onError(event.action.error);
+    });
+    return () => {
+      stopQueries();
+      stopMutations();
+    };
+  }, [queryClient, forgetDevice]);
 
   const requestWakeLock = useCallback(async () => {
     try {
@@ -94,24 +120,18 @@ export function StaffSessionProvider({ children }: { children: ReactNode }) {
   const value = useMemo<StaffSession>(
     () => ({
       user,
-      signIn: (next) => {
+      loading: me.isPending,
+      signIn: (next) => queryClient.setQueryData(ME_KEY, next),
+      signOut: async () => {
         try {
-          sessionStorage.setItem(USER_KEY, JSON.stringify(next));
+          await logout();
         } catch {
-          // ignore
+          // Already signed out on the server, or offline: forget this device's session either way.
         }
-        setUser(next);
+        forgetDevice();
       },
-      signOut: () => {
-        try {
-          sessionStorage.removeItem(USER_KEY);
-        } catch {
-          // ignore
-        }
-        void wakeLock.current?.release();
-        setServiceOn(false);
-        setUser(null);
-      },
+      passwordChanged: () =>
+        queryClient.setQueryData<StaffMe | null>(ME_KEY, (old) => (old ? { ...old, user: { ...old.user, mustChangePassword: false } } : old)),
       can: (page) => (user ? ROLE_PAGES[user.role].includes(page) : false),
       service: {
         on: serviceOn,
@@ -130,7 +150,7 @@ export function StaffSessionProvider({ children }: { children: ReactNode }) {
         },
       },
     }),
-    [user, serviceOn, muted, requestWakeLock],
+    [user, me.isPending, queryClient, serviceOn, muted, requestWakeLock, forgetDevice],
   );
 
   return <StaffSessionContext.Provider value={value}>{children}</StaffSessionContext.Provider>;

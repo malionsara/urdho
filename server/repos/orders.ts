@@ -177,6 +177,16 @@ export async function getGuestOrder(db: Db, venueId: string, sessionId: string, 
   return { id, status, createdAt, statusChangedAt, lines, note, totalLek, sessionTotalLek: billOf(sessionOrders) };
 }
 
+/** Whether this order was placed at this table in a session staff have since closed. */
+export async function isOrderFromClosedSession(db: Db, venueId: string, tableId: string, orderId: string) {
+  const [row] = await db
+    .select({ id: guestOrder.id })
+    .from(guestOrder)
+    .innerJoin(tableSession, and(eq(tableSession.id, guestOrder.sessionId), eq(tableSession.venueId, guestOrder.venueId)))
+    .where(and(eq(guestOrder.venueId, venueId), eq(guestOrder.id, orderId), eq(tableSession.tableId, tableId), eq(tableSession.status, 'closed')));
+  return row !== undefined;
+}
+
 /** "Call the waiter". A second call while the first is unanswered changes nothing. */
 export async function callWaiter(db: Db, venueId: string, sessionId: string, tableId: string) {
   await db.insert(serviceCall).values({ venueId, sessionId, tableId }).onConflictDoNothing();

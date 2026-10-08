@@ -4,9 +4,9 @@ QR ordering for Albanian restaurants: guests scan a code at the table, order fro
 
 ## Status
 
-Milestones 1 to 7 of 9: the repo, the design system, the guest app, the staff dashboard, the PostgreSQL database, and the API: staff sign-in, roles and tenancy, menu management with photo uploads, and ordering from scan to payment.
+Milestones 1 to 8 of 9: the repo, the design system, the guest app, the staff dashboard, the PostgreSQL database, the API (staff sign-in, roles and tenancy, menu management with photo uploads, ordering from scan to payment), and the screens wired to that API with polling for live updates, an offline menu and an installable staff dashboard. Milestone 9 puts it on Vercel with Neon and Blob.
 
-The screens still run on **demo data**: a mock backend in the browser's local storage (`web/src/mock/`), shaped like the spec's data model and shared by the guest app and the dashboard. An order placed in one tab appears on the board in another, and status changes on the board reach the guest's status page. The real API is growing underneath (`server/`); milestone 8 switches the screens over to it.
+An order placed on a phone appears on the board within seconds; status changes on the board, sold-out switches and payment reach the phone the same way.
 
 ## Run it
 
@@ -80,7 +80,7 @@ Guests address the API through their table's QR code, `/api/guest/:slug/t/:qrTok
 | --- | --- |
 | `POST …/scan` | Opens or joins the table's session; returns the menu and whether ordering is open now |
 | `POST …/orders` | `{ clientRef, guestName, note, lines: [{ itemId, qty, optionIds }] }`; the server prices it. A repeated `clientRef` returns the first order |
-| `GET …/orders/:id` | The order's status and lines, with the table's running bill |
+| `GET …/orders/:id` | The order's status and lines, with the table's running bill. Once the table is paid: `session_closed` |
 | `POST …/calls` | Call the waiter; repeat taps don't ring again |
 
 Everyone who scans a table shares one session until staff take payment or close it. The guest cookie is limited to that table's address, so a phone that scanned two tables can't order to the wrong one. Orders are refused outside the venue's opening hours (its own time zone; a venue with no hours set is always open), when a dish has sold out since the guest opened it (`menu_changed`), when option rules are broken, and after 10 orders from one table in 10 minutes. An empty session closes itself after two hours.
@@ -97,14 +97,14 @@ pnpm venue:create --name "Venue name" --slug venue-name --owner-name "Full Name"
 
 ## Database
 
-The schema in `server/db/schema.ts` follows the data model in the spec; migrations in `server/db/migrations/` are generated from it and committed. Tenancy is enforced twice: every query will filter by `venue_id` (milestone 5), and underneath that the database links child rows to parents through `(id, venue_id)` together, so a row can never point at another venue's data. `server/db/schema.test.ts` proves those rules against a real PostgreSQL. The tests use a separate `urdho_test` database that each run wipes and rebuilds.
+The schema in `server/db/schema.ts` follows the data model in the spec; migrations in `server/db/migrations/` are generated from it and committed. Tenancy is enforced twice: every query filters by `venue_id`, and underneath that the database links child rows to parents through `(id, venue_id)` together, so a row can never point at another venue's data. `server/db/schema.test.ts` proves those rules against a real PostgreSQL. The tests use a separate `urdho_test` database that each run wipes and rebuilds.
 
 ## Demo data
 
 - Venue: *Tavë & Raki* (fictional), slug `demo`, Albanian and English.
 - Photos in `web/public/demo/` are AI-generated for the demo (12 dishes and a cover, each as an 800 px and a 400 px WebP). They are not photos of a real restaurant's food; pilot venues use their own.
 - Tables 1 to 6: `/demo/t/demo-1` … `/demo/t/demo-6`. Any other code shows the "code no longer active" screen.
-- Staff: `/staff`, with one-tap demo accounts for each role (any password works in the mock):
+- Staff: `/staff`. The seed creates one account per role with `DEMO_STAFF_PASSWORD` from `.env`; the login screen of `pnpm dev` offers them as one-tap buttons. Production builds never contain that password or the buttons.
 
   | Role | Email | Sees |
   | --- | --- | --- |
@@ -112,14 +112,26 @@ The schema in `server/db/schema.ts` follows the data model in the spec; migratio
   | Manager | menaxheri@demo.al | Orders, tables, menu, QR codes |
   | Waiter | kamarieri@demo.al | Orders, tables |
 
-- Review switches, remembered for the browser tab: `?brand=1F5E45` previews another brand colour (`?brand=reset` clears it), `?slow=1` slows the demo data to show loading states (`?slow=0` clears it).
+- Review switches, remembered for the browser tab: `?brand=1F5E45` previews another brand colour (`?brand=reset` clears it), `?slow=1` slows every API call to show loading states (`?slow=0` clears it).
+- To start over with a clean demo venue: `pnpm db:reset`.
+
+## Live updates and weak signal
+
+Short polling, no sockets: the board and the tables screen ask every 3 seconds, a guest's order status every 5 seconds until it is served, and an open menu every minute (so sold-out dishes grey out). Polling pauses while a tab is hidden or a phone is locked and catches up as soon as it is visible again.
+
+The phone keeps the last menu it loaded. Without a connection the guest still sees it, with a "no internet" banner, and ordering waits for the connection. An order that was sent but got no answer is retried with the same `clientRef`, so the kitchen never gets it twice. A dish that sold out in the meantime is taken out of the basket by name, and after payment the status page says the table is closed.
+
+## Install on a tablet
+
+The staff dashboard is a PWA: in Chrome or Edge use the install button in the address bar, on an iPad Safari's Share → Add to Home Screen. It opens straight to `/staff`, full screen. Only the dashboard links the install manifest (`web/public/staff.webmanifest`), so guests are never offered to install it.
+
+Production builds add a service worker (none in `pnpm dev`): it keeps the guest app's shell and fonts and every photo it has shown, so repeat visits load on a weak signal; the dashboard's files are cached the first time a staff device opens it. It never touches `/api`. A new version takes over by itself, without reloading an open board (a reload would silence the chime until someone taps "Start service" again). Service workers need HTTPS, or `localhost`; try one locally with `pnpm build` and `pnpm exec vite preview`.
 
 ## Layout
 
 ```
 web/src/guest   Guest app: menu, item, basket, checkout, order status
 web/src/staff   Staff dashboard: live board, tables, menu manager, QR cards, staff, settings
-web/src/mock    Mock backend in localStorage, shaped like the spec's data model
 web/src/ui      Design system: buttons, badges, fields, kilim pattern, icons
 web/src/i18n    UI strings (sq, en)
 server/         Hono API: app.ts, routes/, repos/ (all queries, scoped by venue), auth/ (passwords, sessions)

@@ -8,7 +8,7 @@ import type { Db } from '../db/client';
 import { ApiError, notFound, readJson } from '../http';
 import { isOrderingOpen } from '../ordering/hours';
 import { loadMenu } from '../repos/menu';
-import { callWaiter, getGuestOrder, placeOrder } from '../repos/orders';
+import { callWaiter, getGuestOrder, isOrderFromClosedSession, placeOrder } from '../repos/orders';
 import { findGuestSession, findTableByCode, openOrJoinSession, type ScannedTable } from '../repos/sessions';
 
 /*
@@ -84,9 +84,13 @@ export function guestRoutes(db: Db, secret: string) {
   routes.get('/orders/:id', inSession, async (c) => {
     const id = z.uuid().safeParse(c.req.param('id'));
     if (!id.success) throw notFound();
-    const order = await getGuestOrder(db, c.get('scanned').venue.id, c.get('sessionId'), id.data);
-    if (!order) throw notFound();
-    return c.json(order);
+    const { venue, table } = c.get('scanned');
+    const order = await getGuestOrder(db, venue.id, c.get('sessionId'), id.data);
+    if (order) return c.json(order);
+    // After the table was paid, the next menu load gives this phone a new session. Its earlier
+    // order still reads as "table closed", not as an order that never existed.
+    if (await isOrderFromClosedSession(db, venue.id, table.id, id.data)) throw new ApiError(401, 'session_closed');
+    throw notFound();
   });
 
   routes.post('/calls', inSession, async (c) => {

@@ -140,7 +140,7 @@ function OrderCard({ order, nowMs, venue }: { order: BoardOrder; nowMs: number; 
   const { t } = useTranslation();
   const text = useStaffText(venue);
   const elapsed = useElapsed();
-  const update = useStaffMutation(({ id, status }: { id: string; status: OrderStatus }) => setOrderStatus(id, status));
+  const update = useStaffMutation(({ id, status }: { id: string; status: Exclude<OrderStatus, 'new'> }) => setOrderStatus(id, status));
   const [confirmCancel, setConfirmCancel] = useState(false);
 
   const column = order.status as Column;
@@ -148,6 +148,11 @@ function OrderCard({ order, nowMs, venue }: { order: BoardOrder; nowMs: number; 
   const [amber, red] = LATE[column];
   const urgency = waitedMin >= red ? 'late' : waitedMin >= amber ? 'warn' : undefined;
   const fresh = column === 'new' && nowMs - Date.parse(order.createdAt) < 30_000;
+  // "Served just now", not "served just now ago".
+  const servedLabel =
+    nowMs - Date.parse(order.statusChangedAt) < 60_000
+      ? t('staff.board.servedJustNow')
+      : t('staff.board.servedAt', { time: elapsed(order.statusChangedAt, nowMs) });
 
   return (
     <article className={styles.card} data-column={column} data-fresh={fresh || undefined} aria-label={t('staff.board.cardLabel', { number: order.tableNumber })}>
@@ -159,7 +164,7 @@ function OrderCard({ order, nowMs, venue }: { order: BoardOrder; nowMs: number; 
         <div className={styles.cardMeta}>
           <span className={styles.timer} data-urgency={urgency}>
             <Icon name="clock" size={14} strokeWidth={2.4} />
-            {column === 'served' ? t('staff.board.servedAt', { time: elapsed(order.statusChangedAt, nowMs) }) : elapsed(order.createdAt, nowMs)}
+            {column === 'served' ? servedLabel : elapsed(order.createdAt, nowMs)}
           </span>
           {order.guestName && <span className={styles.guest}>{order.guestName}</span>}
         </div>

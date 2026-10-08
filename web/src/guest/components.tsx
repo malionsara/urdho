@@ -95,6 +95,22 @@ export function TagBadge({ tag }: { tag: ItemTag }) {
   );
 }
 
+/** Tells guests when they can look but not order: the kitchen is closed, or the phone is offline. */
+export function ServiceBanner() {
+  const { t } = useTranslation();
+  const { menu } = useGuest();
+  const kind = menu.offline ? 'offline' : !menu.orderingOpen ? 'closed' : null;
+  if (!kind) return null;
+  return (
+    <div className={styles.banner} role="status">
+      <Icon name={kind === 'offline' ? 'wifiOff' : 'clock'} size={20} strokeWidth={2.2} />
+      <p>
+        <strong>{t(`menu.${kind}Title`)}</strong> {t(`menu.${kind}Body`)}
+      </p>
+    </div>
+  );
+}
+
 export function PoweredBy() {
   const { t } = useTranslation();
   return (
