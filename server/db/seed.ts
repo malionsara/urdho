@@ -90,20 +90,32 @@ export async function seedDemoVenue(
   });
 }
 
-// `pnpm db:seed`
+// `pnpm db:seed`: replaces the demo venue.
+// `pnpm db:seed --on-deploy` (every Vercel build): creates the demo venue only if DEMO_STAFF_PASSWORD
+// is set on the project and the venue doesn't exist yet, so it never overwrites anything.
 if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) {
-  const url = requireEnv('DATABASE_URL');
+  const onDeploy = process.argv.includes('--on-deploy');
+  const staffPassword = process.env.DEMO_STAFF_PASSWORD || undefined;
+  if (onDeploy && !staffPassword) {
+    console.log('Demo venue: skipped (DEMO_STAFF_PASSWORD is not set).');
+    process.exit(0);
+  }
+  const url = process.env.DATABASE_URL_UNPOOLED || requireEnv('DATABASE_URL');
   const { db, pool } = createDb(url);
   try {
-    const staffPassword = process.env.DEMO_STAFF_PASSWORD || undefined;
-    // Off this machine (Neon), the shared demo password only gets each account in once.
-    const mustChangePassword = !isLocalDatabase(url);
-    await seedDemoVenue(db, { staffPassword, mustChangePassword });
-    if (staffPassword) {
-      const note = mustChangePassword ? ', to be replaced at first sign-in' : '';
-      console.log(`Demo staff: ${SEED_STAFF.map((s) => s.email).join(', ')} (password from DEMO_STAFF_PASSWORD${note}).`);
+    const [existing] = onDeploy ? await db.select({ id: venue.id }).from(venue).where(eq(venue.slug, DEMO_SLUG)) : [];
+    if (existing) {
+      console.log(`Demo venue: "${DEMO_SLUG}" already exists, left as it is.`);
+    } else {
+      // Off this machine (Neon), the shared demo password only gets each account in once.
+      const mustChangePassword = !isLocalDatabase(url);
+      await seedDemoVenue(db, { staffPassword, mustChangePassword });
+      if (staffPassword) {
+        const note = mustChangePassword ? ', to be replaced at first sign-in' : '';
+        console.log(`Demo staff: ${SEED_STAFF.map((s) => s.email).join(', ')} (password from DEMO_STAFF_PASSWORD${note}).`);
+      }
+      console.log(`Seeded the "${DEMO_SLUG}" venue: ${SEED_TABLES.length} tables, ${SEED_CATEGORIES.length} categories, ${SEED_CATEGORIES.flatMap((c) => c.items).length} dishes.`);
     }
-    console.log(`Seeded the "${DEMO_SLUG}" venue: ${SEED_TABLES.length} tables, ${SEED_CATEGORIES.length} categories, ${SEED_CATEGORIES.flatMap((c) => c.items).length} dishes.`);
   } finally {
     await pool.end();
   }
