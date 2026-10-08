@@ -23,6 +23,7 @@ Changes from the first draft, made before the build starts. Revert any you disag
 - The project rules and kickoff prompt moved to `CLAUDE.md` and `docs/KICKOFF.md`.
 - Database (milestone 4): the `option` table is named `menu_option`; tags and allergens are database enums; one open session per table and one unanswered waiter call per session are enforced by unique indexes.
 - Live updates (milestone 8): an open guest menu also refreshes every minute, so dishes that sell out grey out without a reload. Polling pauses while a tab is hidden. After payment, the guest's status page says the table is closed, even if the phone has since joined the next session at that table.
+- Deploy (milestone 9): one Vercel Function for the API in Frankfurt (fra1), next to the Neon database and close to Albania; migrations run in every build, so a failing migration stops the deploy. Failed staff sign-ins are limited in PostgreSQL (per account and address, per account, per address), which works on any Vercel plan without a firewall rule. The production front page is a short "scan the code at your table" page; the design-review hub stays on the dev server.
 - PWA (milestone 8): only the staff dashboard is installable (its manifest is linked from `/staff` alone), so guests are never offered to install the staff app. The service worker caches the guest app shell and photos, never API responses; the menu itself is kept on the phone by the app. New versions take over without reloading an open board.
 
 ## Overview

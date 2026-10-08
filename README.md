@@ -4,7 +4,9 @@ QR ordering for Albanian restaurants: guests scan a code at the table, order fro
 
 ## Status
 
-Milestones 1 to 8 of 9: the repo, the design system, the guest app, the staff dashboard, the PostgreSQL database, the API (staff sign-in, roles and tenancy, menu management with photo uploads, ordering from scan to payment), and the screens wired to that API with polling for live updates, an offline menu and an installable staff dashboard. Milestone 9 puts it on Vercel with Neon and Blob.
+All 9 milestones of the MVP plan: the design system, the guest app, the staff dashboard, the PostgreSQL database, the API (staff sign-in, roles and tenancy, menu management with photo uploads, ordering from scan to payment), the screens wired to it with polling, an offline menu and an installable dashboard, and the deploy.
+
+Live at **https://urdho.vercel.app** (Vercel, with Neon PostgreSQL and Vercel Blob in Frankfurt).
 
 An order placed on a phone appears on the board within seconds; status changes on the board, sold-out switches and payment reach the phone the same way.
 
@@ -31,7 +33,8 @@ Open http://localhost:5173 for the design-review page, which links to every scre
 | `pnpm test:unit` | Only the tests that need no database |
 | `pnpm lint` | ESLint |
 | `pnpm typecheck` | TypeScript |
-| `pnpm build` | Production build into `dist/` |
+| `pnpm build` | Production build: the web app into `dist/`, the API into `server/dist/vercel.js` |
+| `pnpm deploy:build` | What Vercel runs: build, migrate, seed the demo venue if asked |
 | `pnpm db:up` / `db:down` | Start / stop PostgreSQL in Docker |
 | `pnpm db:reset` | Wipe the local database, apply migrations, seed the demo venue (local databases only) |
 | `pnpm db:migrate` | Apply new migrations |
@@ -40,9 +43,32 @@ Open http://localhost:5173 for the design-review page, which links to every scre
 | `pnpm db:studio` | Browse the data in Drizzle Studio |
 | `pnpm venue:create` | Create a pilot venue, its tables and its owner; prints the owner's temporary password once |
 
+## Deploy
+
+The private GitHub repo `malionsara/urdho` is linked to the Vercel project `urdho` (team MNP Team): every push to `main` deploys to https://urdho.vercel.app, and the previous version keeps serving until the new one is ready. A build runs `pnpm deploy:build`:
+
+1. `pnpm build`: the web app into `dist/`, and the API into one file, `server/dist/vercel.js`, which `api/index.js` hands to Vercel.
+2. `pnpm db:migrate`: new migrations on Neon. A failing migration fails the deploy, so the live site never runs code against a schema it doesn't expect.
+3. `pnpm db:seed --on-deploy`: creates the demo venue only if `DEMO_STAFF_PASSWORD` is set on the project and the venue doesn't exist yet. It never overwrites anything.
+
+`vercel.json` sends `/api/*` to the function (in `fra1`, Frankfurt, next to the database) and every other app address to `index.html`, except `/assets/`, where a missing file is a real 404. Built files are cached for a year; the service worker and manifest are always revalidated.
+
+Settings on the Vercel project:
+
+| Variable | Set by | Used for |
+| --- | --- | --- |
+| `DATABASE_URL`, `DATABASE_URL_UNPOOLED` (and Neon's other `PG*`/`POSTGRES_*` variables) | Neon integration | The app uses the pooled address; migrations and the seed the direct one |
+| `BLOB_READ_WRITE_TOKEN` | Blob store `urdho-photos` (public, Frankfurt) | Photo uploads. Required in production: a function's disk can't keep files |
+| `GUEST_SESSION_SECRET` | Random, Sensitive | Signs the guests' table cookies. Changing it moves every phone to a fresh session at its table |
+| `DEMO_STAFF_PASSWORD` | Optional, Sensitive, production only | The demo accounts' starting password (see [Demo data](#demo-data)). Safe to delete once the demo venue exists |
+
+Sensitive values can't be read back, not even by the project's owners. Previews deploy from other branches behind Vercel sign-in.
+
+A real venue: copy the direct connection string from the Neon dashboard (Vercel → Storage → urdho → Open in Neon), then run `pnpm venue:create` with it as `DATABASE_URL`. The owner's temporary password is printed once; they choose their own at first sign-in.
+
 ## API
 
-Hono, in `server/`. In development it runs inside `pnpm dev` at http://localhost:5173/api; on Vercel it will run as a function (milestone 9).
+Hono, in `server/`. In development it runs inside `pnpm dev` at http://localhost:5173/api; on Vercel it runs as one function (see [Deploy](#deploy)).
 
 | Route | Who | What |
 | --- | --- | --- |
@@ -87,7 +113,7 @@ Everyone who scans a table shares one session until staff take payment or close 
 
 Removing anything on the menu archives it, so past orders keep pointing at real rows; their names and prices were copied when ordered. Photos are checked to be images, turned upright, stripped of metadata and stored as WebP in two sizes (`name.webp` and `name-400.webp`, or `-600` for covers): in Vercel Blob when `BLOB_READ_WRITE_TOKEN` is set, otherwise in `web/public/uploads/`, which `pnpm dev` serves and git ignores.
 
-Sessions are an httpOnly, SameSite=Strict cookie limited to `/api`, valid for 30 days; the database stores only a hash of the token. Accounts created with a temporary password can only change it, sign out or ask who they are until they choose their own. Errors come back as `{ "error": { "code": "…" } }`; the web app translates the codes.
+Sessions are an httpOnly, SameSite=Strict cookie limited to `/api`, valid for 30 days; the database stores only a hash of the token. Accounts created with a temporary password can only change it, sign out or ask who they are until they choose their own. Password guessing is slowed down in PostgreSQL: after 5 wrong sign-ins for one account from one address within 15 minutes (or 50 for one account from anywhere, or 30 from one address across accounts), sign-in answers `too_many_attempts` until the window passes; the real owner signing in from elsewhere is never locked out. Errors come back as `{ "error": { "code": "…" } }`; the web app translates the codes.
 
 Create a pilot venue:
 
@@ -114,6 +140,7 @@ The schema in `server/db/schema.ts` follows the data model in the spec; migratio
 
 - Review switches, remembered for the browser tab: `?brand=1F5E45` previews another brand colour (`?brand=reset` clears it), `?slow=1` slows every API call to show loading states (`?slow=0` clears it).
 - To start over with a clean demo venue: `pnpm db:reset`.
+- On https://urdho.vercel.app the demo venue exists too, open 08:00–23:00 Tirana time. Its three accounts start with the password in `.env.vercel-demo` (git-ignored, on the machine that set up the deploy) and must each replace it at first sign-in. Its table codes are the public `demo-1` … `demo-6`: anyone who knows them can order there, so reset them under QR codes before showing the demo to strangers.
 
 ## Live updates and weak signal
 
@@ -134,7 +161,9 @@ web/src/guest   Guest app: menu, item, basket, checkout, order status
 web/src/staff   Staff dashboard: live board, tables, menu manager, QR cards, staff, settings
 web/src/ui      Design system: buttons, badges, fields, kilim pattern, icons
 web/src/i18n    UI strings (sq, en)
-server/         Hono API: app.ts, routes/, repos/ (all queries, scoped by venue), auth/ (passwords, sessions)
+server/         Hono API: app.ts, routes/, repos/ (all queries, scoped by venue), auth/ (passwords, sessions);
+                vercel.ts is the production entry, dev-entry.ts the one `pnpm dev` loads
+api/            Vercel's entry: index.js exports the bundled API
 server/db       Drizzle schema, migrations, seed and reset scripts
 shared/         Types, allergens, price maths, lekë formatting and the demo menu, shared by web and server
 docs/           Spec, kickoff prompt, plan

@@ -30,5 +30,5 @@
 
 - One package (no workspaces). /web: the Vite app, guest app and staff dashboard as separate route trees. /server: the Hono app, database, modules. /api: the Vercel Functions entry. /shared: types, enums and price maths used by web and server.
 - Node 24, pnpm 10. Local PostgreSQL runs in Docker on host port 5433 (5432 is taken on the dev machine).
-- Commands: `pnpm dev`, `pnpm test`, `pnpm lint`, `pnpm typecheck`, `pnpm build`. Database: `pnpm db:up` before `pnpm test`; after changing `server/db/schema.ts`, run `pnpm db:generate` and commit the migration. Never edit a migration that has been committed.
+- Commands: `pnpm dev`, `pnpm test`, `pnpm lint`, `pnpm typecheck`, `pnpm build`. Vercel runs `pnpm deploy:build` (build, migrate, seed the demo venue if asked) on every push to `main`; `server/vercel.ts` is the production entry, bundled into `server/dist/` (never into `dist/`, which is public). Database: `pnpm db:up` before `pnpm test`; after changing `server/db/schema.ts`, run `pnpm db:generate` and commit the migration. Never edit a migration that has been committed.
 - Server code imports shared code by relative path (`../../shared/...`); the `@shared` alias exists only in the Vite app.
