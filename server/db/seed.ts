@@ -3,7 +3,7 @@ import { eq } from 'drizzle-orm';
 import { DEMO_SLUG, SEED_CATEGORIES, SEED_STAFF, SEED_TABLES, SEED_VENUE } from '../../shared/demo';
 import type { LocalizedText } from '../../shared/types';
 import { hashPassword } from '../auth/crypto';
-import { requireEnv } from '../env';
+import { isLocalDatabase, requireEnv } from '../env';
 import { createDb, type Db } from './client';
 import { diningTable, menuCategory, menuItem, menuOption, optionGroup, staffUser, translation, venue } from './schema';
 
@@ -12,9 +12,13 @@ type TranslationRow = typeof translation.$inferInsert;
 /**
  * Creates the demo venue from shared/demo.ts: 6 tables, 3 categories, 12 dishes with options,
  * texts in Albanian and English. Replaces an existing demo venue; other venues are untouched.
- * With a staffPassword, also creates the demo owner, manager and waiter with that password.
+ * With a staffPassword, also creates the demo owner, manager and waiter with that password; with
+ * mustChangePassword, each must replace it at first sign-in (used for databases off this machine).
  */
-export async function seedDemoVenue(db: Db, { staffPassword }: { staffPassword?: string } = {}): Promise<{ venueId: string }> {
+export async function seedDemoVenue(
+  db: Db,
+  { staffPassword, mustChangePassword = false }: { staffPassword?: string; mustChangePassword?: boolean } = {},
+): Promise<{ venueId: string }> {
   const passwordHash = staffPassword ? await hashPassword(staffPassword) : undefined;
   return db.transaction(async (tx) => {
     await tx.delete(venue).where(eq(venue.slug, DEMO_SLUG));
@@ -78,7 +82,9 @@ export async function seedDemoVenue(db: Db, { staffPassword }: { staffPassword?:
     await tx.insert(translation).values(texts);
 
     if (passwordHash) {
-      await tx.insert(staffUser).values(SEED_STAFF.map(({ name, email, role }) => ({ venueId, name, email, role, passwordHash })));
+      await tx
+        .insert(staffUser)
+        .values(SEED_STAFF.map(({ name, email, role }) => ({ venueId, name, email, role, passwordHash, mustChangePassword })));
     }
     return { venueId };
   });
@@ -86,11 +92,17 @@ export async function seedDemoVenue(db: Db, { staffPassword }: { staffPassword?:
 
 // `pnpm db:seed`
 if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) {
-  const { db, pool } = createDb(requireEnv('DATABASE_URL'));
+  const url = requireEnv('DATABASE_URL');
+  const { db, pool } = createDb(url);
   try {
     const staffPassword = process.env.DEMO_STAFF_PASSWORD || undefined;
-    await seedDemoVenue(db, { staffPassword });
-    if (staffPassword) console.log(`Demo staff: ${SEED_STAFF.map((s) => s.email).join(', ')} (password from DEMO_STAFF_PASSWORD).`);
+    // Off this machine (Neon), the shared demo password only gets each account in once.
+    const mustChangePassword = !isLocalDatabase(url);
+    await seedDemoVenue(db, { staffPassword, mustChangePassword });
+    if (staffPassword) {
+      const note = mustChangePassword ? ', to be replaced at first sign-in' : '';
+      console.log(`Demo staff: ${SEED_STAFF.map((s) => s.email).join(', ')} (password from DEMO_STAFF_PASSWORD${note}).`);
+    }
     console.log(`Seeded the "${DEMO_SLUG}" venue: ${SEED_TABLES.length} tables, ${SEED_CATEGORIES.length} categories, ${SEED_CATEGORIES.flatMap((c) => c.items).length} dishes.`);
   } finally {
     await pool.end();

@@ -139,6 +139,7 @@
       "venue_closed": "The kitchen is closed right now. Please order during opening hours.",
       "too_many_orders": "Too many orders from this table at once. Please ask your waiter.",
       "invalid_login": "That email or password isn't right.",
+      "too_many_attempts": "Too many wrong attempts. Try again in 15 minutes.",
       "password_change_required": "Please choose your own password first.",
       "wrong_password": "Your current password isn't right.",
       "same_password": "The new password must be different from the old one.",
@@ -433,5 +434,11 @@
       "wrongCurrent": "Your current password isn't right.",
       "same": "The new password must be different from the old one."
     }
+  },
+  "home": {
+    "title": "Order from your table",
+    "lead": "Scan the QR code on your table to see the menu and order, with nothing to download.",
+    "staff": "Staff dashboard",
+    "staffBody": "Your venue’s orders, tables and menu"
   }
 }

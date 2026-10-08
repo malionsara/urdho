@@ -9,3 +9,6 @@ coverage
 
 # Photos uploaded through the local dev server
 web/public/uploads/
+
+# The API bundle for Vercel (pnpm build)
+server/dist/

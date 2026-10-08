@@ -68,3 +68,11 @@ export function isUniqueViolation(error: unknown): boolean {
   const e = error as { code?: string; cause?: { code?: string } };
   return (e.cause?.code ?? e.code) === '23505';
 }
+
+/**
+ * The caller's IP address, or '' when unknown. On Vercel these headers are set by the platform,
+ * which overwrites whatever the client sent; in local development there are none.
+ */
+export function clientAddress(c: Context): string {
+  return c.req.header('x-real-ip') ?? c.req.header('x-forwarded-for')?.split(',')[0]?.trim() ?? '';
+}

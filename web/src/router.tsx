@@ -1,6 +1,6 @@
 import { createBrowserRouter, Outlet, ScrollRestoration } from 'react-router';
-import { DevIndex } from './DevIndex';
 import { GuestLayout } from './guest/GuestLayout';
+import { Home } from './Home';
 import { BasketScreen } from './guest/screens/BasketScreen';
 import { CheckoutScreen } from './guest/screens/CheckoutScreen';
 import { ItemScreen } from './guest/screens/ItemScreen';
@@ -21,7 +21,11 @@ export const router = createBrowserRouter([
   {
     element: <Root />,
     children: [
-      { path: '/', element: <DevIndex /> },
+      // The design-review hub (with its "fill the board" tool) exists only on the dev server; the
+      // production build doesn't even contain it.
+      import.meta.env.DEV
+        ? { path: '/', lazy: async () => ({ Component: (await import('./DevIndex')).DevIndex }), HydrateFallback: () => null }
+        : { path: '/', element: <Home /> },
       {
         path: '/:slug/t/:qrToken',
         element: <GuestLayout />,

@@ -1,10 +1,10 @@
 import { requireEnv } from '../env';
-import { createDb, type Db } from './client';
+import { createDb } from './client';
 
-let shared: Db | undefined;
+let shared: ReturnType<typeof createDb> | undefined;
 
-/** The app's database, from DATABASE_URL. One pool per process, reused across requests. */
-export function getDb(): Db {
-  shared ??= createDb(requireEnv('DATABASE_URL')).db;
+/** The app's database and its connection pool, from DATABASE_URL. One per process, reused across requests. */
+export function getDatabase() {
+  shared ??= createDb(requireEnv('DATABASE_URL'));
   return shared;
 }

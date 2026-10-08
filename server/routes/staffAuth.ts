@@ -3,8 +3,17 @@ import { loginInput, passwordChangeInput } from '../../shared/schemas';
 import { hashPassword, verifyAgainstNothing, verifyPassword } from '../auth/crypto';
 import { clearSessionCookie, requireStaff, setSessionCookie } from '../auth/middleware';
 import type { Db } from '../db/client';
-import { ApiError, readJson, type AppEnv, type StaffContext } from '../http';
-import { createSession, deleteSession, findPasswordHash, findStaffByEmail, setPassword } from '../repos/staff';
+import { ApiError, clientAddress, readJson, type AppEnv, type StaffContext } from '../http';
+import {
+  clearLoginFailures,
+  createSession,
+  deleteSession,
+  findPasswordHash,
+  findStaffByEmail,
+  isLoginBlocked,
+  recordLoginFailure,
+  setPassword,
+} from '../repos/staff';
 import { getVenue } from '../repos/venue';
 
 const toUser = (s: Pick<StaffContext, 'name' | 'email' | 'role' | 'mustChangePassword'> & { id: string }) => ({
@@ -22,11 +31,19 @@ export function staffAuthRoutes(db: Db) {
 
   routes.post('/login', async (c) => {
     const { email, password } = await readJson(c, loginInput);
+    const ip = clientAddress(c);
+    // Checked before the password, so a blocked guesser learns nothing, not even a right guess.
+    if (await isLoginBlocked(db, email, ip)) throw new ApiError(429, 'too_many_attempts');
+
     const account = await findStaffByEmail(db, email);
     const valid = account ? await verifyPassword(password, account.passwordHash) : await verifyAgainstNothing(password);
     // One answer for a wrong email and a wrong password, so nobody can probe which accounts exist.
-    if (!account || !valid) throw new ApiError(401, 'invalid_login');
+    if (!account || !valid) {
+      await recordLoginFailure(db, email, ip);
+      throw new ApiError(401, 'invalid_login');
+    }
 
+    await clearLoginFailures(db, email, ip);
     const { token, expiresAt } = await createSession(db, account.venueId, account.id);
     setSessionCookie(c, token, expiresAt);
     return c.json({ user: toUser(account), venue: await getVenue(db, account.venueId) });

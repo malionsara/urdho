@@ -100,6 +100,24 @@ export const staffUser = pgTable(
 );
 
 /** A signed-in device. Only the SHA-256 of the cookie's token is stored; removing the user signs them out. */
+/**
+ * Failed staff sign-ins, to slow down password guessing (server/repos/staff.ts). Not tenant data: it
+ * is written before any venue is known, and the email may not belong to any account. Rows older than
+ * a day are deleted as new ones arrive.
+ */
+export const loginFailure = pgTable(
+  'login_failure',
+  {
+    id: id(),
+    /** Lower-cased, as typed. */
+    email: text('email').notNull(),
+    /** The client's address as Vercel reports it; empty when unknown (local development). */
+    ip: text('ip').notNull(),
+    createdAt: createdAt(),
+  },
+  (t) => [index('login_failure_email').on(t.email, t.createdAt), index('login_failure_ip').on(t.ip, t.createdAt)],
+);
+
 export const staffSession = pgTable(
   'staff_session',
   {

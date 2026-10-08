@@ -1,7 +1,8 @@
 import { randomUUID } from 'node:crypto';
 import { eq, sql } from 'drizzle-orm';
 import { describe, expect, it } from 'vitest';
-import { staffSession, staffUser, venue } from '../db/schema';
+import { loginFailure, staffSession, staffUser, venue } from '../db/schema';
+import { LOGIN_LIMIT } from '../repos/staff';
 import { makeVenueWithStaff, PASSWORD, testApi } from '../test/api';
 import { connectTestDb } from '../test/db';
 
@@ -101,6 +102,55 @@ describe('signing in and out', () => {
     const { cookie } = await login(v.manager.email);
     await db.update(staffUser).set({ role: 'waiter' }).where(eq(staffUser.id, v.manager.id));
     expect((await call('GET', '/api/staff/me', { cookie })).body?.user).toMatchObject({ role: 'waiter' });
+  });
+});
+
+describe('guessing passwords', () => {
+  let n = 0;
+  const address = () => `203.0.113.${++n}`;
+  const attempt = (email: string, password: string, ip: string) =>
+    call('POST', '/api/staff/login', { body: { email, password }, headers: { 'x-real-ip': ip } });
+
+  it(`stops one address after ${LOGIN_LIMIT.accountAtAddress} wrong passwords for an account, even for the right one`, async () => {
+    const v = await makeVenueWithStaff(db, 'A');
+    const ip = address();
+    for (let i = 0; i < LOGIN_LIMIT.accountAtAddress; i++) expect((await attempt(v.owner.email, 'wrong guess', ip)).status).toBe(401);
+    const blocked = await attempt(v.owner.email, PASSWORD, ip);
+    expect(blocked.status).toBe(429);
+    expect(blocked.body).toEqual({ error: { code: 'too_many_attempts' } });
+    expect(blocked.headers.get('set-cookie')).toBeNull();
+  });
+
+  it('never locks the real owner out from another address, and lifts the block after 15 minutes', async () => {
+    const v = await makeVenueWithStaff(db, 'A');
+    const attacker = address();
+    for (let i = 0; i < LOGIN_LIMIT.accountAtAddress; i++) await attempt(v.owner.email, 'wrong guess', attacker);
+    expect((await attempt(v.owner.email, PASSWORD, address())).status).toBe(200);
+
+    await db.execute(sql`update login_failure set created_at = now() - interval '16 minutes' where ip = ${attacker}`);
+    expect((await attempt(v.owner.email, PASSWORD, attacker)).status).toBe(200);
+  });
+
+  it('forgets earlier typos once the right password goes through', async () => {
+    const v = await makeVenueWithStaff(db, 'A');
+    const ip = address();
+    for (let i = 0; i < LOGIN_LIMIT.accountAtAddress - 1; i++) await attempt(v.owner.email, 'typo', ip);
+    expect((await attempt(v.owner.email, PASSWORD, ip)).status).toBe(200);
+    expect((await attempt(v.owner.email, 'typo', ip)).status).toBe(401);
+    expect((await attempt(v.owner.email, PASSWORD, ip)).status).toBe(200);
+  });
+
+  it(`stops one address trying many accounts after ${LOGIN_LIMIT.address} failures`, async () => {
+    const v = await makeVenueWithStaff(db, 'A');
+    const ip = address();
+    for (let i = 0; i < LOGIN_LIMIT.address; i++) await attempt(`guess-${i}-${ip}@nowhere.test`, 'wrong guess', ip);
+    expect((await attempt(v.waiter.email, PASSWORD, ip)).status).toBe(429);
+  });
+
+  it(`stops guessing one account from many addresses after ${LOGIN_LIMIT.account} failures`, async () => {
+    const v = await makeVenueWithStaff(db, 'A');
+    await db.insert(loginFailure).values(Array.from({ length: LOGIN_LIMIT.account }, () => ({ email: v.manager.email.toLowerCase(), ip: address() })));
+    expect((await attempt(v.manager.email, PASSWORD, address())).status).toBe(429);
   });
 });
 

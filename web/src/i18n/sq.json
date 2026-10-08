@@ -139,6 +139,7 @@
       "venue_closed": "Kuzhina është e mbyllur tani. Provoni në orarin e punës.",
       "too_many_orders": "Shumë porosi njëherësh nga kjo tavolinë. Pyesni kamarierin.",
       "invalid_login": "Email-i ose fjalëkalimi nuk është i saktë.",
+      "too_many_attempts": "Shumë përpjekje të gabuara. Provoni sërish pas 15 minutash.",
       "password_change_required": "Zgjidhni fillimisht fjalëkalimin tuaj.",
       "wrong_password": "Fjalëkalimi aktual nuk është i saktë.",
       "same_password": "Fjalëkalimi i ri duhet të jetë ndryshe nga i vjetri.",
@@ -433,5 +434,11 @@
       "wrongCurrent": "Fjalëkalimi aktual nuk është i saktë.",
       "same": "Fjalëkalimi i ri duhet të jetë ndryshe nga i vjetri."
     }
+  },
+  "home": {
+    "title": "Porositni nga tavolina",
+    "lead": "Skanoni kodin QR në tavolinën tuaj për të parë menunë dhe për të porositur, pa shkarkuar asgjë.",
+    "staff": "Paneli i stafit",
+    "staffBody": "Porositë, tavolinat dhe menuja e lokalit tuaj"
   }
 }
