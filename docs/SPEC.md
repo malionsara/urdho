@@ -104,7 +104,8 @@ Every tenant-owned table carries a `venue_id`, child tables such as options and 
 | Entity | Key fields | Notes |
 | --- | --- | --- |
 | venue | id, name, slug, logo\_url, cover\_url, brand\_color, languages\[\], default\_language, timezone, opening\_hours, currency, plan, status | The tenant. The slug builds the guest URL. Time zone defaults to Europe/Tirane; opening hours are a weekly schedule |
-| staff\_user | id, venue\_id, name, email, password\_hash, role | Roles: owner, manager, waiter |
+| staff\_user | id, venue\_id, name, email, password\_hash, role, must\_change\_password | Roles: owner, manager, waiter. One account per email, across all venues. Accounts made with a temporary password must change it before doing anything else |
+| staff\_session | id, venue\_id, staff\_user\_id, token\_hash, created\_at, expires\_at | A signed-in device. Only the SHA-256 of the cookie's token is stored; sessions last 30 days and end when the account is removed or its password changes |
 | dining\_table | id, venue\_id, number, label, qr\_token | The QR token is random and resettable |
 | menu\_category | id, venue\_id, sort\_order, active, archived\_at | Name comes from translations |
 | menu\_item | id, venue\_id, category\_id, price\_lek, photo\_url, available, suggest\_in\_basket, tags\[\], allergens\[\], sort\_order, archived\_at | Name and description from translations. Tags are badges (vegetarian, spicy, new); allergens are codes from the EU list of 14 |

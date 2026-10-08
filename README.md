@@ -4,9 +4,9 @@ QR ordering for Albanian restaurants: guests scan a code at the table, order fro
 
 ## Status
 
-Milestones 1 to 4 of 9: the repo, the design system, the guest app, the staff dashboard, and the PostgreSQL database with migrations and seed data.
+Milestones 1 to 5 of 9: the repo, the design system, the guest app, the staff dashboard, the PostgreSQL database, and the API's staff sign-in, roles and tenancy.
 
-The apps still run on **demo data**: a mock backend in the browser's local storage (`web/src/mock/`), shaped like the spec's data model and shared by the guest app and the dashboard. An order placed in one tab appears on the board in another, and status changes on the board reach the guest's status page. The API that connects the apps to the database comes in milestones 5 to 8.
+The screens still run on **demo data**: a mock backend in the browser's local storage (`web/src/mock/`), shaped like the spec's data model and shared by the guest app and the dashboard. An order placed in one tab appears on the board in another, and status changes on the board reach the guest's status page. The real API is growing underneath (`server/`); milestone 8 switches the screens over to it.
 
 ## Run it
 
@@ -20,7 +20,7 @@ pnpm db:reset
 pnpm dev
 ```
 
-`pnpm db:up` starts PostgreSQL in Docker on port 5433; `pnpm db:reset` builds the tables and seeds the demo venue. The apps themselves don't need the database yet.
+`pnpm db:up` starts PostgreSQL in Docker on port 5433; `pnpm db:reset` builds the tables and seeds the demo venue, with its three staff accounts when `DEMO_STAFF_PASSWORD` is set in `.env`. `pnpm dev` serves the web app and, under `/api`, the API.
 
 Open http://localhost:5173 for the design-review page, which links to every screen and state and can fill the board with a demo service. Open the guest app in a phone-width window (390 px) and the dashboard at tablet size (1024 × 768), or use real devices on the same network with `pnpm dev --host`.
 
@@ -38,6 +38,31 @@ Open http://localhost:5173 for the design-review page, which links to every scre
 | `pnpm db:seed` | Replace the demo venue, leaving other data alone |
 | `pnpm db:generate` | Write a migration after changing `server/db/schema.ts` |
 | `pnpm db:studio` | Browse the data in Drizzle Studio |
+| `pnpm venue:create` | Create a pilot venue, its tables and its owner; prints the owner's temporary password once |
+
+## API
+
+Hono, in `server/`. In development it runs inside `pnpm dev` at http://localhost:5173/api; on Vercel it will run as a function (milestone 9).
+
+| Route | Who | What |
+| --- | --- | --- |
+| `POST /api/staff/login` | anyone | Email and password; sets the session cookie |
+| `POST /api/staff/logout` | signed in | Ends this device's session |
+| `GET /api/staff/me` | signed in | The account and its venue |
+| `POST /api/staff/password` | signed in | Change password; signs out other devices |
+| `GET /api/staff/team` | owner | Staff accounts of the venue |
+| `POST /api/staff/team` | owner | New account with a temporary password, shown once |
+| `DELETE /api/staff/team/:id` | owner | Remove an account and end its sessions |
+| `GET /api/staff/venue` | signed in | Venue settings |
+| `PUT /api/staff/venue` | owner | Change venue settings |
+
+Sessions are an httpOnly, SameSite=Strict cookie limited to `/api`, valid for 30 days; the database stores only a hash of the token. Accounts created with a temporary password can only change it, sign out or ask who they are until they choose their own. Errors come back as `{ "error": { "code": "…" } }`; the web app translates the codes.
+
+Create a pilot venue:
+
+```bash
+pnpm venue:create --name "Venue name" --slug venue-name --owner-name "Full Name" --owner-email owner@example.com --tables 8
+```
 
 ## Database
 
@@ -66,6 +91,7 @@ web/src/staff   Staff dashboard: live board, tables, menu manager, QR cards, sta
 web/src/mock    Mock backend in localStorage, shaped like the spec's data model
 web/src/ui      Design system: buttons, badges, fields, kilim pattern, icons
 web/src/i18n    UI strings (sq, en)
+server/         Hono API: app.ts, routes/, repos/ (all queries, scoped by venue), auth/ (passwords, sessions)
 server/db       Drizzle schema, migrations, seed and reset scripts
 shared/         Types, allergens, price maths, lekë formatting and the demo menu, shared by web and server
 docs/           Spec, kickoff prompt, plan

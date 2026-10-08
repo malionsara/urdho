@@ -88,12 +88,31 @@ export const staffUser = pgTable(
     email: text('email').notNull(),
     passwordHash: text('password_hash').notNull(),
     role: staffRole('role').notNull(),
+    /** Set for accounts made with a temporary password; cleared when they choose their own. */
+    mustChangePassword: boolean('must_change_password').notNull().default(false),
     createdAt: createdAt(),
   },
   (t) => [
     // One venue per account: an email address signs in to exactly one venue.
     uniqueIndex('staff_user_email_unique').on(sql`lower(${t.email})`),
     unique('staff_user_id_venue').on(t.id, t.venueId),
+  ],
+);
+
+/** A signed-in device. Only the SHA-256 of the cookie's token is stored; removing the user signs them out. */
+export const staffSession = pgTable(
+  'staff_session',
+  {
+    id: id(),
+    venueId: venueId(),
+    staffUserId: uuid('staff_user_id').notNull(),
+    tokenHash: text('token_hash').notNull().unique(),
+    createdAt: createdAt(),
+    expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+  },
+  (t) => [
+    foreignKey({ name: 'staff_session_user_fk', columns: [t.staffUserId, t.venueId], foreignColumns: [staffUser.id, staffUser.venueId] }).onDelete('cascade'),
+    index('staff_session_user').on(t.venueId, t.staffUserId),
   ],
 );
 

@@ -23,7 +23,7 @@ if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) {
   await runMigrations(url);
   const { db, pool } = createDb(url);
   try {
-    await seedDemoVenue(db);
+    await seedDemoVenue(db, { staffPassword: process.env.DEMO_STAFF_PASSWORD || undefined });
   } finally {
     await pool.end();
   }

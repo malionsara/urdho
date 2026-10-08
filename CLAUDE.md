@@ -14,7 +14,14 @@
 
 - Tooling: pnpm, TypeScript, Vite, @vitejs/plugin-react, ESLint with typescript-eslint and eslint-plugin-react-hooks, Prettier, tsx, Vitest.
 - Web: react, react-dom, react-router, @tanstack/react-query, i18next, react-i18next, vite-plugin-pwa, qrcode, @fontsource-variable/bricolage-grotesque, @fontsource-variable/inter, @testing-library/react, jsdom. Styling is CSS Modules with CSS variables; no CSS or UI framework.
-- API: hono, @hono/node-server and @hono/vite-dev-server (local dev), drizzle-orm, drizzle-kit, pg, zod, @vercel/blob, @vercel/functions, sharp (photo resizing). Passwords use Node's built-in scrypt, no package.
+- API: hono, @hono/vite-dev-server (serves /api inside `pnpm dev`), drizzle-orm, drizzle-kit, pg, zod, @vercel/blob, @vercel/functions, sharp (photo resizing). Passwords use Node's built-in scrypt, no package.
+
+## API conventions
+
+- Every staff route uses `requireStaff(db, { roles })` from server/auth/middleware.ts; handlers take the venue from `c.get('staff').venueId`. The test "every staff route needs a signed-in session" reads the route list, so a new route without it fails.
+- Repository functions (server/repos) take `venueId` as their first argument. The only exceptions are login by email and resolving a session cookie, which happen before the venue is known.
+- Request bodies are validated with the zod schemas in shared/schemas.ts via `readJson`; unknown fields are dropped.
+- Errors are `{ error: { code } }` with an HTTP status, raised as `ApiError`. Another venue's row is a 404, never a 403.
 - Type packages (@types/*) for anything above.
 
 ## Layout

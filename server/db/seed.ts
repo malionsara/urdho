@@ -1,18 +1,21 @@
 import { pathToFileURL } from 'node:url';
 import { eq } from 'drizzle-orm';
-import { DEMO_SLUG, SEED_CATEGORIES, SEED_TABLES, SEED_VENUE } from '../../shared/demo';
+import { DEMO_SLUG, SEED_CATEGORIES, SEED_STAFF, SEED_TABLES, SEED_VENUE } from '../../shared/demo';
 import type { LocalizedText } from '../../shared/types';
+import { hashPassword } from '../auth/crypto';
 import { requireEnv } from '../env';
 import { createDb, type Db } from './client';
-import { diningTable, menuCategory, menuItem, menuOption, optionGroup, translation, venue } from './schema';
+import { diningTable, menuCategory, menuItem, menuOption, optionGroup, staffUser, translation, venue } from './schema';
 
 type TranslationRow = typeof translation.$inferInsert;
 
 /**
  * Creates the demo venue from shared/demo.ts: 6 tables, 3 categories, 12 dishes with options,
  * texts in Albanian and English. Replaces an existing demo venue; other venues are untouched.
+ * With a staffPassword, also creates the demo owner, manager and waiter with that password.
  */
-export async function seedDemoVenue(db: Db): Promise<{ venueId: string }> {
+export async function seedDemoVenue(db: Db, { staffPassword }: { staffPassword?: string } = {}): Promise<{ venueId: string }> {
+  const passwordHash = staffPassword ? await hashPassword(staffPassword) : undefined;
   return db.transaction(async (tx) => {
     await tx.delete(venue).where(eq(venue.slug, DEMO_SLUG));
 
@@ -73,6 +76,10 @@ export async function seedDemoVenue(db: Db): Promise<{ venueId: string }> {
     }
 
     await tx.insert(translation).values(texts);
+
+    if (passwordHash) {
+      await tx.insert(staffUser).values(SEED_STAFF.map(({ name, email, role }) => ({ venueId, name, email, role, passwordHash })));
+    }
     return { venueId };
   });
 }
@@ -81,7 +88,9 @@ export async function seedDemoVenue(db: Db): Promise<{ venueId: string }> {
 if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) {
   const { db, pool } = createDb(requireEnv('DATABASE_URL'));
   try {
-    await seedDemoVenue(db);
+    const staffPassword = process.env.DEMO_STAFF_PASSWORD || undefined;
+    await seedDemoVenue(db, { staffPassword });
+    if (staffPassword) console.log(`Demo staff: ${SEED_STAFF.map((s) => s.email).join(', ')} (password from DEMO_STAFF_PASSWORD).`);
     console.log(`Seeded the "${DEMO_SLUG}" venue: ${SEED_TABLES.length} tables, ${SEED_CATEGORIES.length} categories, ${SEED_CATEGORIES.flatMap((c) => c.items).length} dishes.`);
   } finally {
     await pool.end();
