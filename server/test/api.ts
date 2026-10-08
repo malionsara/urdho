@@ -1,6 +1,10 @@
+import { mkdtempSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { createApp } from '../app';
 import { hashPassword } from '../auth/crypto';
 import { staffUser } from '../db/schema';
+import { diskStorage } from '../photos';
 import { makeVenue } from './db';
 import type { connectTestDb } from './db';
 
@@ -17,7 +21,9 @@ interface CallOptions {
 
 /** The API against the test database, called in-process the way the browser would call it. */
 export function testApi(db: Db) {
-  const app = createApp({ db });
+  // Uploaded photos land in a throwaway folder.
+  const uploadDir = mkdtempSync(join(tmpdir(), 'urdho-uploads-'));
+  const app = createApp({ db, storage: diskStorage(uploadDir, '/uploads') });
 
   async function call(method: string, path: string, { body, cookie, headers = {} }: CallOptions = {}) {
     const requestHeaders: Record<string, string> = {
@@ -41,7 +47,7 @@ export function testApi(db: Db) {
     return { ...res, cookie: cookie ?? '' };
   }
 
-  return { app, call, login };
+  return { app, call, login, uploadDir };
 }
 
 /** A venue with an owner, a manager and a waiter, all with PASSWORD. Emails are unique per call. */

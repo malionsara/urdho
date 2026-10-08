@@ -4,7 +4,7 @@ QR ordering for Albanian restaurants: guests scan a code at the table, order fro
 
 ## Status
 
-Milestones 1 to 5 of 9: the repo, the design system, the guest app, the staff dashboard, the PostgreSQL database, and the API's staff sign-in, roles and tenancy.
+Milestones 1 to 6 of 9: the repo, the design system, the guest app, the staff dashboard, the PostgreSQL database, and the API's staff sign-in, roles, tenancy and menu management with photo uploads.
 
 The screens still run on **demo data**: a mock backend in the browser's local storage (`web/src/mock/`), shaped like the spec's data model and shared by the guest app and the dashboard. An order placed in one tab appears on the board in another, and status changes on the board reach the guest's status page. The real API is growing underneath (`server/`); milestone 8 switches the screens over to it.
 
@@ -55,6 +55,17 @@ Hono, in `server/`. In development it runs inside `pnpm dev` at http://localhost
 | `DELETE /api/staff/team/:id` | owner | Remove an account and end its sessions |
 | `GET /api/staff/venue` | signed in | Venue settings |
 | `PUT /api/staff/venue` | owner | Change venue settings |
+| `GET /api/staff/menu` | owner, manager | Categories and dishes with option groups, texts per language |
+| `POST /api/staff/menu/categories` | owner, manager | New category |
+| `PATCH /api/staff/menu/categories/:id` | owner, manager | Rename, show or hide a category |
+| `DELETE /api/staff/menu/categories/:id` | owner, manager | Archive an empty category |
+| `POST /api/staff/menu/items` | owner, manager | New dish with its option groups |
+| `PUT /api/staff/menu/items/:id` | owner, manager | Save a whole dish; options left out are archived |
+| `PATCH /api/staff/menu/items/:id/availability` | owner, manager | Sold-out switch |
+| `DELETE /api/staff/menu/items/:id` | owner, manager | Archive a dish |
+| `POST /api/staff/uploads?kind=dish\|cover\|logo` | owner, manager (dish), owner (cover, logo) | Photo upload, multipart field `file`; returns `{ url }` |
+
+Removing anything on the menu archives it, so past orders keep pointing at real rows; their names and prices were copied when ordered. Photos are checked to be images, turned upright, stripped of metadata and stored as WebP in two sizes (`name.webp` and `name-400.webp`, or `-600` for covers): in Vercel Blob when `BLOB_READ_WRITE_TOKEN` is set, otherwise in `web/public/uploads/`, which `pnpm dev` serves and git ignores.
 
 Sessions are an httpOnly, SameSite=Strict cookie limited to `/api`, valid for 30 days; the database stores only a hash of the token. Accounts created with a temporary password can only change it, sign out or ask who they are until they choose their own. Errors come back as `{ "error": { "code": "…" } }`; the web app translates the codes.
 

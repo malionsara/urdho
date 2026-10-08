@@ -6,3 +6,6 @@ coverage
 .env.*
 !.env.example
 *.log
+
+# Photos uploaded through the local dev server
+web/public/uploads/

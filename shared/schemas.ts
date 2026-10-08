@@ -1,5 +1,6 @@
 import { z } from 'zod';
-import { LANGUAGES, STAFF_ROLES } from './types';
+import { ALLERGENS } from './allergens';
+import { ITEM_TAGS, LANGUAGES, STAFF_ROLES, type Language } from './types';
 
 /*
  * Request bodies the API accepts. Unknown fields are dropped, so a body can never smuggle in a
@@ -52,6 +53,69 @@ export const venueSettingsInput = z
   })
   .refine((v) => v.languages.includes(v.defaultLanguage), { path: ['defaultLanguage'], message: 'default_language_not_offered' });
 
+/* Menu ------------------------------------------------------------------------ */
+
+/** A text per language; empty strings are dropped, so a cleared field removes that language. */
+const localized = (max: number) =>
+  z
+    .partialRecord(z.enum(LANGUAGES), z.string().trim().max(max))
+    .transform((text) => Object.fromEntries(Object.entries(text).filter(([, value]) => value)) as Partial<Record<Language, string>>);
+
+const uniqueList = <T extends z.ZodType>(item: T, max: number) =>
+  z
+    .array(item)
+    .max(max)
+    .refine((list) => new Set(list).size === list.length, 'duplicate');
+
+export const categoryInput = z.object({
+  name: localized(60),
+});
+
+export const categoryUpdateInput = z.object({
+  name: localized(60).optional(),
+  active: z.boolean().optional(),
+});
+
+const optionInput = z.object({
+  /** Present for an option that already exists; omitted for a new one. */
+  id: z.uuid().optional(),
+  name: localized(80),
+  priceDeltaLek: z.number().int().min(-100_000).max(100_000),
+  available: z.boolean(),
+});
+
+const optionGroupInput = z
+  .object({
+    id: z.uuid().optional(),
+    name: localized(80),
+    minSelect: z.number().int().min(0).max(20),
+    maxSelect: z.number().int().min(1).max(20),
+    options: z.array(optionInput).min(1).max(30),
+  })
+  .refine((g) => g.minSelect <= g.maxSelect, { path: ['minSelect'], message: 'min_above_max' })
+  .refine((g) => g.maxSelect <= g.options.length, { path: ['maxSelect'], message: 'max_above_option_count' });
+
+/** A whole dish as the menu manager saves it: texts, price, flags, and its option groups in order. */
+export const menuItemInput = z.object({
+  categoryId: z.uuid(),
+  name: localized(120),
+  description: localized(500),
+  priceLek: z.number().int().min(0).max(1_000_000),
+  photoUrl: imageUrl,
+  available: z.boolean(),
+  suggestInBasket: z.boolean(),
+  tags: uniqueList(z.enum(ITEM_TAGS), ITEM_TAGS.length),
+  allergens: uniqueList(z.enum(ALLERGENS), ALLERGENS.length),
+  optionGroups: z.array(optionGroupInput).max(10),
+});
+
+export const availabilityInput = z.object({ available: z.boolean() });
+
+export const PHOTO_KINDS = ['dish', 'cover', 'logo'] as const;
+export type PhotoKind = (typeof PHOTO_KINDS)[number];
+
+export type CategoryInput = z.infer<typeof categoryInput>;
+export type MenuItemInput = z.infer<typeof menuItemInput>;
 export type LoginInput = z.infer<typeof loginInput>;
 export type PasswordChangeInput = z.infer<typeof passwordChangeInput>;
 export type NewStaffInput = z.infer<typeof newStaffInput>;
