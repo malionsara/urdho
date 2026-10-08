@@ -49,7 +49,7 @@ The private GitHub repo `malionsara/urdho` is linked to the Vercel project `urdh
 
 1. `pnpm build`: the web app into `dist/`, and the API into one file, `server/dist/vercel.js`, which `api/index.js` hands to Vercel.
 2. `pnpm db:migrate`: new migrations on Neon. A failing migration fails the deploy, so the live site never runs code against a schema it doesn't expect.
-3. `pnpm db:seed --on-deploy`: creates the demo venue only if `DEMO_STAFF_PASSWORD` is set on the project and the venue doesn't exist yet. It never overwrites anything.
+3. `pnpm db:seed --on-deploy`: creates the demo venue only if `DEMO_STAFF_PASSWORD` is set on the project and the venue doesn't exist yet. It never overwrites anything, except replacing a public `demo-N` table code with a private one.
 
 `vercel.json` sends `/api/*` to the function (in `fra1`, Frankfurt, next to the database) and every other app address to `index.html`, except `/assets/`, where a missing file is a real 404. Built files are cached for a year; the service worker and manifest are always revalidated.
 
@@ -140,7 +140,7 @@ The schema in `server/db/schema.ts` follows the data model in the spec; migratio
 
 - Review switches, remembered for the browser tab: `?brand=1F5E45` previews another brand colour (`?brand=reset` clears it), `?slow=1` slows every API call to show loading states (`?slow=0` clears it).
 - To start over with a clean demo venue: `pnpm db:reset`.
-- On https://urdho.vercel.app the demo venue exists too, open 08:00–23:00 Tirana time. Its three accounts start with the password in `.env.vercel-demo` (git-ignored, on the machine that set up the deploy) and must each replace it at first sign-in. Its table codes are the public `demo-1` … `demo-6`: anyone who knows them can order there, so reset them under QR codes before showing the demo to strangers.
+- On https://urdho.vercel.app the demo venue exists too, open 08:00–23:00 Tirana time. Its three accounts start with the password in `.env.vercel-demo` (git-ignored, on the machine that set up the deploy) and must each replace it at first sign-in. Its tables don't use the public `demo-1` … `demo-6` codes: off this machine the seed gives them random ones, and every deploy replaces any public code still there. Print or scan them from QR codes in the dashboard.
 
 ## Live updates and weak signal
 

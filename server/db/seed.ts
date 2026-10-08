@@ -1,9 +1,10 @@
 import { pathToFileURL } from 'node:url';
-import { eq } from 'drizzle-orm';
+import { and, eq, inArray } from 'drizzle-orm';
 import { DEMO_SLUG, SEED_CATEGORIES, SEED_STAFF, SEED_TABLES, SEED_VENUE } from '../../shared/demo';
 import type { LocalizedText } from '../../shared/types';
-import { hashPassword } from '../auth/crypto';
+import { hashPassword, newQrToken } from '../auth/crypto';
 import { isLocalDatabase, requireEnv } from '../env';
+import { resetQrToken } from '../repos/sessions';
 import { createDb, type Db } from './client';
 import { diningTable, menuCategory, menuItem, menuOption, optionGroup, staffUser, translation, venue } from './schema';
 
@@ -12,12 +13,17 @@ type TranslationRow = typeof translation.$inferInsert;
 /**
  * Creates the demo venue from shared/demo.ts: 6 tables, 3 categories, 12 dishes with options,
  * texts in Albanian and English. Replaces an existing demo venue; other venues are untouched.
- * With a staffPassword, also creates the demo owner, manager and waiter with that password; with
- * mustChangePassword, each must replace it at first sign-in (used for databases off this machine).
+ * With a staffPassword, also creates the demo owner, manager and waiter with that password.
+ * For databases off this machine: mustChangePassword makes each account replace that password at
+ * first sign-in, and privateTableCodes gives the tables random codes instead of demo-1 … demo-6.
  */
 export async function seedDemoVenue(
   db: Db,
-  { staffPassword, mustChangePassword = false }: { staffPassword?: string; mustChangePassword?: boolean } = {},
+  {
+    staffPassword,
+    mustChangePassword = false,
+    privateTableCodes = false,
+  }: { staffPassword?: string; mustChangePassword?: boolean; privateTableCodes?: boolean } = {},
 ): Promise<{ venueId: string }> {
   const passwordHash = staffPassword ? await hashPassword(staffPassword) : undefined;
   return db.transaction(async (tx) => {
@@ -30,7 +36,9 @@ export async function seedDemoVenue(
       .returning({ id: venue.id });
     const venueId = created!.id;
 
-    await tx.insert(diningTable).values(SEED_TABLES.map((t) => ({ venueId, number: t.number, qrToken: t.qrToken })));
+    await tx
+      .insert(diningTable)
+      .values(SEED_TABLES.map((t) => ({ venueId, number: t.number, qrToken: privateTableCodes ? newQrToken() : t.qrToken })));
 
     const texts: TranslationRow[] = [];
     const addTexts = (entityType: TranslationRow['entityType'], entityId: string, field: TranslationRow['field'], value: LocalizedText) => {
@@ -90,26 +98,42 @@ export async function seedDemoVenue(
   });
 }
 
+/**
+ * Gives every demo table still on a public code (demo-1 … demo-6) a new random one, the same way
+ * "Reset code" does in the dashboard. Returns how many tables changed.
+ */
+export async function hidePublicTableCodes(db: Db, venueId: string): Promise<number> {
+  const publicCodes = SEED_TABLES.map((t) => t.qrToken);
+  const tables = await db
+    .select({ id: diningTable.id })
+    .from(diningTable)
+    .where(and(eq(diningTable.venueId, venueId), inArray(diningTable.qrToken, publicCodes)));
+  for (const table of tables) await resetQrToken(db, venueId, table.id);
+  return tables.length;
+}
+
 // `pnpm db:seed`: replaces the demo venue.
 // `pnpm db:seed --on-deploy` (every Vercel build): creates the demo venue only if DEMO_STAFF_PASSWORD
-// is set on the project and the venue doesn't exist yet, so it never overwrites anything.
+// is set on the project and the venue doesn't exist yet, so it never overwrites anything. An existing
+// demo venue off this machine only has any public table codes replaced.
 if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) {
   const onDeploy = process.argv.includes('--on-deploy');
   const staffPassword = process.env.DEMO_STAFF_PASSWORD || undefined;
-  if (onDeploy && !staffPassword) {
-    console.log('Demo venue: skipped (DEMO_STAFF_PASSWORD is not set).');
-    process.exit(0);
-  }
   const url = process.env.DATABASE_URL_UNPOOLED || requireEnv('DATABASE_URL');
   const { db, pool } = createDb(url);
   try {
+    // Off this machine (Neon), the shared demo password only gets each account in once, and the
+    // tables get codes nobody can guess.
+    const offMachine = !isLocalDatabase(url);
     const [existing] = onDeploy ? await db.select({ id: venue.id }).from(venue).where(eq(venue.slug, DEMO_SLUG)) : [];
     if (existing) {
-      console.log(`Demo venue: "${DEMO_SLUG}" already exists, left as it is.`);
+      const hidden = offMachine ? await hidePublicTableCodes(db, existing.id) : 0;
+      console.log(`Demo venue: "${DEMO_SLUG}" already exists, left as it is${hidden ? `, except ${hidden} public table codes now replaced with private ones` : ''}.`);
+    } else if (onDeploy && !staffPassword) {
+      console.log('Demo venue: not created (DEMO_STAFF_PASSWORD is not set).');
     } else {
-      // Off this machine (Neon), the shared demo password only gets each account in once.
-      const mustChangePassword = !isLocalDatabase(url);
-      await seedDemoVenue(db, { staffPassword, mustChangePassword });
+      const mustChangePassword = offMachine;
+      await seedDemoVenue(db, { staffPassword, mustChangePassword, privateTableCodes: offMachine });
       if (staffPassword) {
         const note = mustChangePassword ? ', to be replaced at first sign-in' : '';
         console.log(`Demo staff: ${SEED_STAFF.map((s) => s.email).join(', ')} (password from DEMO_STAFF_PASSWORD${note}).`);

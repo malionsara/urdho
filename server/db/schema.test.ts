@@ -1,9 +1,10 @@
 import { randomUUID } from 'node:crypto';
 import { and, count, eq, sql } from 'drizzle-orm';
 import { describe, expect, it } from 'vitest';
-import { DEMO_SLUG } from '../../shared/demo';
+import { DEMO_SLUG, SEED_TABLES } from '../../shared/demo';
 import { errorCode, makeVenue, PG, connectTestDb } from '../test/db';
 import {
+  diningTable,
   guestOrder,
   menuCategory,
   menuItem,
@@ -15,7 +16,7 @@ import {
   translation,
   venue,
 } from './schema';
-import { seedDemoVenue } from './seed';
+import { hidePublicTableCodes, seedDemoVenue } from './seed';
 
 const db = connectTestDb();
 
@@ -170,5 +171,22 @@ describe('demo seed', () => {
     for (const { id } of items) {
       expect(names.filter((n) => n.entityId === id).map((n) => n.lang).sort()).toEqual(['en', 'sq']);
     }
+  });
+
+  it('keeps the public table codes on this machine, and replaces them with private ones elsewhere', async () => {
+    const codes = async (venueId: string) =>
+      (await db.select({ code: diningTable.qrToken }).from(diningTable).where(eq(diningTable.venueId, venueId))).map((t) => t.code);
+    const isPublic = (code: string) => SEED_TABLES.some((t) => t.qrToken === code);
+
+    const local = await seedDemoVenue(db);
+    expect((await codes(local.venueId)).every(isPublic)).toBe(true);
+    expect(await hidePublicTableCodes(db, local.venueId)).toBe(6);
+    const replaced = await codes(local.venueId);
+    expect(replaced.some(isPublic)).toBe(false);
+    expect(await hidePublicTableCodes(db, local.venueId)).toBe(0);
+    expect(await codes(local.venueId)).toEqual(replaced);
+
+    const remote = await seedDemoVenue(db, { privateTableCodes: true });
+    expect((await codes(remote.venueId)).some(isPublic)).toBe(false);
   });
 });
