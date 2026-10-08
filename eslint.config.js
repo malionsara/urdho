@@ -8,7 +8,7 @@ export default defineConfig(
   { ignores: ['dist', 'coverage', 'node_modules'] },
   js.configs.recommended,
   tseslint.configs.recommended,
-  reactHooks.configs.flat.recommended,
+  { files: ['web/**/*.{ts,tsx}'], ...reactHooks.configs.flat.recommended },
   {
     languageOptions: { globals: { ...globals.browser, ...globals.node } },
     rules: {

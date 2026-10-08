@@ -1,7 +1,8 @@
-import type { MenuCategory, MenuItem, MenuOptionGroup, StaffUser, Venue } from '@shared/types';
+import type { MenuCategory, MenuItem, MenuOptionGroup, StaffUser, Venue } from './types';
 
 /*
- * Demo data for designing the guest app before the API exists. The venue is fictional.
+ * The demo venue: used by the browser mock (web/src/mock) and the database seed (server/db/seed.ts).
+ * The venue is fictional.
  * Albanian texts are drafts for a native speaker to check.
  */
 

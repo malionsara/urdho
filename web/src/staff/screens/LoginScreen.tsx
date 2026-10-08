@@ -1,9 +1,9 @@
 import { useState, type FormEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Navigate, useNavigate } from 'react-router';
+import { SEED_STAFF } from '@shared/demo';
 import type { StaffRole } from '@shared/types';
 import { brandStyle } from '../../lib/brand';
-import { SEED_STAFF } from '../../mock/seed';
 import { Button } from '../../ui/Button';
 import { Icon } from '../../ui/Icon';
 import { KilimBand } from '../../ui/Kilim';

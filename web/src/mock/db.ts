@@ -7,7 +7,7 @@ import type {
   Venue,
   LocalizedText,
 } from '@shared/types';
-import { SEED_CATEGORIES, SEED_STAFF, SEED_TABLES, SEED_VENUE } from './seed';
+import { SEED_CATEGORIES, SEED_STAFF, SEED_TABLES, SEED_VENUE } from '@shared/demo';
 
 /*
  * A pretend backend that lives in the browser's localStorage, shaped like the data model in

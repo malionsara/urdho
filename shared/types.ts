@@ -6,9 +6,11 @@ export type Language = (typeof LANGUAGES)[number];
 /** A user-facing text in each language the venue has entered. */
 export type LocalizedText = Partial<Record<Language, string>>;
 
-export type ItemTag = 'vegetarian' | 'spicy' | 'new';
+export const ITEM_TAGS = ['vegetarian', 'spicy', 'new'] as const;
+export type ItemTag = (typeof ITEM_TAGS)[number];
 
-export type OrderStatus = 'new' | 'preparing' | 'served' | 'cancelled';
+export const ORDER_STATUSES = ['new', 'preparing', 'served', 'cancelled'] as const;
+export type OrderStatus = (typeof ORDER_STATUSES)[number];
 
 export interface MenuOption {
   id: string;
@@ -72,7 +74,8 @@ export interface Venue {
 /** The part of the venue the guest app sees. */
 export type GuestVenue = Pick<Venue, 'id' | 'slug' | 'name' | 'logoUrl' | 'coverUrl' | 'brandColor' | 'languages' | 'defaultLanguage'>;
 
-export type StaffRole = 'owner' | 'manager' | 'waiter';
+export const STAFF_ROLES = ['owner', 'manager', 'waiter'] as const;
+export type StaffRole = (typeof STAFF_ROLES)[number];
 
 export interface StaffUser {
   id: string;
@@ -81,7 +84,8 @@ export interface StaffUser {
   role: StaffRole;
 }
 
-export type PaymentMethod = 'cash' | 'card';
+export const PAYMENT_METHODS = ['cash', 'card'] as const;
+export type PaymentMethod = (typeof PAYMENT_METHODS)[number];
 
 export interface GuestTable {
   id: string;

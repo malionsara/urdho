@@ -4,26 +4,44 @@ QR ordering for Albanian restaurants: guests scan a code at the table, order fro
 
 ## Status
 
-Milestones 1 to 3 of 9: the repo, the design system, the guest app and the staff dashboard, all on **demo data**. There is no server or database yet. Instead, a mock backend in the browser's local storage (`web/src/mock/`) follows the spec's data model, and the guest app and the dashboard share it: an order placed in one tab appears on the board in another, and status changes on the board reach the guest's status page.
+Milestones 1 to 4 of 9: the repo, the design system, the guest app, the staff dashboard, and the PostgreSQL database with migrations and seed data.
+
+The apps still run on **demo data**: a mock backend in the browser's local storage (`web/src/mock/`), shaped like the spec's data model and shared by the guest app and the dashboard. An order placed in one tab appears on the board in another, and status changes on the board reach the guest's status page. The API that connects the apps to the database comes in milestones 5 to 8.
 
 ## Run it
 
-Requires Node 24 and pnpm 10.
+Requires Node 24, pnpm 10 and Docker.
 
 ```bash
 pnpm install
+cp .env.example .env
+pnpm db:up
+pnpm db:reset
 pnpm dev
 ```
+
+`pnpm db:up` starts PostgreSQL in Docker on port 5433; `pnpm db:reset` builds the tables and seeds the demo venue. The apps themselves don't need the database yet.
 
 Open http://localhost:5173 for the design-review page, which links to every screen and state and can fill the board with a demo service. Open the guest app in a phone-width window (390 px) and the dashboard at tablet size (1024 × 768), or use real devices on the same network with `pnpm dev --host`.
 
 | Command | What it does |
 | --- | --- |
 | `pnpm dev` | Dev server with hot reload |
-| `pnpm test` | Unit tests (Vitest) |
+| `pnpm test` | All tests. The database tests need `pnpm db:up` first |
+| `pnpm test:unit` | Only the tests that need no database |
 | `pnpm lint` | ESLint |
 | `pnpm typecheck` | TypeScript |
 | `pnpm build` | Production build into `dist/` |
+| `pnpm db:up` / `db:down` | Start / stop PostgreSQL in Docker |
+| `pnpm db:reset` | Wipe the local database, apply migrations, seed the demo venue (local databases only) |
+| `pnpm db:migrate` | Apply new migrations |
+| `pnpm db:seed` | Replace the demo venue, leaving other data alone |
+| `pnpm db:generate` | Write a migration after changing `server/db/schema.ts` |
+| `pnpm db:studio` | Browse the data in Drizzle Studio |
+
+## Database
+
+The schema in `server/db/schema.ts` follows the data model in the spec; migrations in `server/db/migrations/` are generated from it and committed. Tenancy is enforced twice: every query will filter by `venue_id` (milestone 5), and underneath that the database links child rows to parents through `(id, venue_id)` together, so a row can never point at another venue's data. `server/db/schema.test.ts` proves those rules against a real PostgreSQL. The tests use a separate `urdho_test` database that each run wipes and rebuilds.
 
 ## Demo data
 
@@ -48,7 +66,8 @@ web/src/staff   Staff dashboard: live board, tables, menu manager, QR cards, sta
 web/src/mock    Mock backend in localStorage, shaped like the spec's data model
 web/src/ui      Design system: buttons, badges, fields, kilim pattern, icons
 web/src/i18n    UI strings (sq, en)
-shared/         Types, allergens, price maths and lekë formatting shared with the future API
+server/db       Drizzle schema, migrations, seed and reset scripts
+shared/         Types, allergens, price maths, lekë formatting and the demo menu, shared by web and server
 docs/           Spec, kickoff prompt, plan
 ```
 

@@ -21,6 +21,7 @@ Changes from the first draft, made before the build starts. Revert any you disag
 - Claude Design brief updated to match (name-only checkout, no "coming soon" card).
 - Guest app look (after the first design review): bold and photo-first in the spirit of the Nando's eat-in flow, with Urdho's own identity: Albanian kilim patterns, a dark navigation bar, a saffron accent, a chunky display font, and a cover photo per venue (`cover_url`).
 - The project rules and kickoff prompt moved to `CLAUDE.md` and `docs/KICKOFF.md`.
+- Database (milestone 4): the `option` table is named `menu_option`; tags and allergens are database enums; one open session per table and one unanswered waiter call per session are enforced by unique indexes.
 
 ## Overview
 
@@ -98,7 +99,7 @@ The MVP never touches money: the guest orders in the app and pays staff at the e
 
 ## Data model
 
-Every tenant-owned table carries a `venue_id`, child tables such as options and order lines included, so one database serves many restaurants and every query filters by it. Prices are stored as whole lekë (integers), and user-facing texts live in a translation table keyed by language. Menu rows are archived (`archived_at`) rather than deleted, so order history always resolves.
+Every tenant-owned table carries a `venue_id`, child tables such as options and order lines included, so one database serves many restaurants and every query filters by it. Child rows point at their parent through (parent id, `venue_id`) together, so the database itself refuses to link one venue's rows to another venue's. Prices are stored as whole lekë (integers), and user-facing texts live in a translation table keyed by language. Menu rows are archived (`archived_at`) rather than deleted, so order history always resolves.
 
 | Entity | Key fields | Notes |
 | --- | --- | --- |
@@ -108,7 +109,7 @@ Every tenant-owned table carries a `venue_id`, child tables such as options and 
 | menu\_category | id, venue\_id, sort\_order, active, archived\_at | Name comes from translations |
 | menu\_item | id, venue\_id, category\_id, price\_lek, photo\_url, available, suggest\_in\_basket, tags\[\], allergens\[\], sort\_order, archived\_at | Name and description from translations. Tags are badges (vegetarian, spicy, new); allergens are codes from the EU list of 14 |
 | option\_group | id, venue\_id, item\_id, min\_select, max\_select, sort\_order, archived\_at | Covers sizes, extras and remove-ingredient lists |
-| option | id, venue\_id, group\_id, price\_delta\_lek, available, sort\_order, archived\_at | Name from translations |
+| menu\_option | id, venue\_id, group\_id, price\_delta\_lek, available, sort\_order, archived\_at | Name from translations. Called menu\_option so SQL never has to quote it |
 | translation | id, venue\_id, entity\_type, entity\_id, field, lang, text | One row per text per language. A missing language falls back to the venue's default language |
 | table\_session | id, venue\_id, table\_id, status, token\_hash, opened\_at, closed\_at | Groups all orders at a table until paid. Guests hold the session token in a cookie; only its hash is stored |
 | guest\_order | id, venue\_id, session\_id, client\_ref, status, guest\_name, note, created\_at | Status: new, preparing, served, cancelled. `client_ref` is a key made on the guest's phone, unique per session, so a retried submission never creates a second order |

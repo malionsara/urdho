@@ -1,0 +1,23 @@
+# Local PostgreSQL for development and tests. Production uses Neon.
+# Host port 5433, because 5432 is often taken by a locally installed PostgreSQL.
+services:
+  db:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: urdho
+      POSTGRES_PASSWORD: urdho
+      POSTGRES_DB: urdho
+    ports:
+      - '5433:5432'
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      # Creates the urdho_test database on first start.
+      - ./server/db/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U urdho -d urdho']
+      interval: 2s
+      timeout: 3s
+      retries: 20
+
+volumes:
+  pgdata:
