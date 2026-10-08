@@ -39,6 +39,7 @@ export async function fetchMenu(slug: string, qrToken: string): Promise<GuestMen
         items: db.items.filter((i) => i.categoryId === c.id && !i.archived).map(({ archived: _archived, ...item }) => item),
       }))
       .filter((c) => c.items.length > 0),
+    orderingOpen: true,
   };
 }
 

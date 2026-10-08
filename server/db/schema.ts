@@ -289,7 +289,10 @@ export const orderItem = pgTable(
     itemId: uuid('item_id').notNull(),
     /** Copied at order time in every venue language, so menu edits never change history. */
     itemName: jsonb('item_name').$type<LocalizedText>().notNull(),
+    /** The line's place in the order, as the guest added it. */
+    position: integer('position').notNull().default(0),
     qty: integer('qty').notNull(),
+    /** The dish's own price when ordered; option prices are on order_item_option. */
     unitPriceLek: integer('unit_price_lek').notNull(),
     note: text('note').notNull().default(''),
   },
@@ -311,6 +314,7 @@ export const orderItemOption = pgTable(
     orderItemId: uuid('order_item_id').notNull(),
     optionId: uuid('option_id').notNull(),
     optionName: jsonb('option_name').$type<LocalizedText>().notNull(),
+    position: integer('position').notNull().default(0),
     priceDeltaLek: integer('price_delta_lek').notNull(),
   },
   (t) => [

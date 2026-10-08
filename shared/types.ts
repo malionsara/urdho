@@ -97,6 +97,8 @@ export interface GuestMenu {
   venue: GuestVenue;
   table: GuestTable;
   categories: MenuCategory[];
+  /** False outside opening hours: guests can read the menu but not order. */
+  orderingOpen: boolean;
 }
 
 /** One basket line as the guest app sends it. The server prices it. */

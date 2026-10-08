@@ -15,6 +15,13 @@
       "when": 1791486243589,
       "tag": "0001_staff_sessions",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1791489268461,
+      "tag": "0002_order_line_positions",
+      "breakpoints": true
     }
   ]
 }

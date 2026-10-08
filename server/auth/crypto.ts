@@ -1,4 +1,4 @@
-import { createHash, randomBytes, scrypt, timingSafeEqual, type ScryptOptions } from 'node:crypto';
+import { createHash, createHmac, randomBytes, scrypt, timingSafeEqual, type ScryptOptions } from 'node:crypto';
 
 /*
  * Passwords: scrypt from Node's standard library, no package needed.
@@ -48,6 +48,12 @@ export async function verifyAgainstNothing(password: string): Promise<false> {
 export const newSessionToken = () => randomBytes(32).toString('base64url');
 
 export const sha256 = (value: string) => createHash('sha256').update(value).digest('hex');
+
+/**
+ * A table session's guest token. Derived from the session id with a server secret, so every guest
+ * who scans the same table gets the same token while only its hash is stored.
+ */
+export const guestSessionToken = (secret: string, sessionId: string) => createHmac('sha256', secret).update(`table-session:${sessionId}`).digest('base64url');
 
 /** A short random token for a table's QR code, e.g. "k3Jd9xQ2mL0a". */
 export const newQrToken = () => randomBytes(9).toString('base64url');

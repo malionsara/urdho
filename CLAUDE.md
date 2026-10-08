@@ -22,6 +22,8 @@
 - Repository functions (server/repos) take `venueId` as their first argument. The only exceptions are login by email and resolving a session cookie, which happen before the venue is known.
 - Request bodies are validated with the zod schemas in shared/schemas.ts via `readJson`; unknown fields are dropped.
 - Errors are `{ error: { code } }` with an HTTP status, raised as `ApiError`. Another venue's row is a 404, never a 403.
+- Guest routes live under `/api/guest/:slug/t/:qrToken` (server/routes/guest.ts). The table comes from that address; everything except `scan` needs the table-session cookie, which a test checks for every guest route.
+- Payments only go through `PaymentProvider` (server/payments/provider.ts); routes never write the payment table directly.
 - Type packages (@types/*) for anything above.
 
 ## Layout

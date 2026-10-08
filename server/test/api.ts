@@ -23,7 +23,7 @@ interface CallOptions {
 export function testApi(db: Db) {
   // Uploaded photos land in a throwaway folder.
   const uploadDir = mkdtempSync(join(tmpdir(), 'urdho-uploads-'));
-  const app = createApp({ db, storage: diskStorage(uploadDir, '/uploads') });
+  const app = createApp({ db, storage: diskStorage(uploadDir, '/uploads'), guestSecret: 'test-guest-secret' });
 
   async function call(method: string, path: string, { body, cookie, headers = {} }: CallOptions = {}) {
     const requestHeaders: Record<string, string> = {

@@ -112,9 +112,9 @@ Every tenant-owned table carries a `venue_id`, child tables such as options and 
 | option\_group | id, venue\_id, item\_id, min\_select, max\_select, sort\_order, archived\_at | Covers sizes, extras and remove-ingredient lists |
 | menu\_option | id, venue\_id, group\_id, price\_delta\_lek, available, sort\_order, archived\_at | Name from translations. Called menu\_option so SQL never has to quote it |
 | translation | id, venue\_id, entity\_type, entity\_id, field, lang, text | One row per text per language. A missing language falls back to the venue's default language |
-| table\_session | id, venue\_id, table\_id, status, token\_hash, opened\_at, closed\_at | Groups all orders at a table until paid. Guests hold the session token in a cookie; only its hash is stored |
+| table\_session | id, venue\_id, table\_id, status, token\_hash, opened\_at, closed\_at | Groups all orders at a table until paid. Guests hold the session token in a cookie; only its hash is stored. The token is derived from the session id with a server secret, so everyone at the table gets the same one |
 | guest\_order | id, venue\_id, session\_id, client\_ref, status, guest\_name, note, created\_at | Status: new, preparing, served, cancelled. `client_ref` is a key made on the guest's phone, unique per session, so a retried submission never creates a second order |
-| order\_item | id, venue\_id, order\_id, item\_id, item\_name, qty, unit\_price\_lek, note | Name (in every venue language) and price copied at order time so later menu edits never change history |
+| order\_item | id, venue\_id, order\_id, item\_id, item\_name, position, qty, unit\_price\_lek, note | Name (in every venue language) and price copied at order time so later menu edits never change history. unit\_price\_lek is the dish's own price; option prices are on order\_item\_option |
 | order\_item\_option | id, venue\_id, order\_item\_id, option\_id, option\_name, price\_delta\_lek | Selected options per line, with name and price copied |
 | service\_call | id, venue\_id, session\_id, table\_id, created\_at, acknowledged\_at, acknowledged\_by | "Call the waiter" |
 | payment | id, venue\_id, session\_id, provider, method, amount\_lek, status, provider\_ref | Provider is cash in the MVP; method is cash or card |

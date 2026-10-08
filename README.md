@@ -4,7 +4,7 @@ QR ordering for Albanian restaurants: guests scan a code at the table, order fro
 
 ## Status
 
-Milestones 1 to 6 of 9: the repo, the design system, the guest app, the staff dashboard, the PostgreSQL database, and the API's staff sign-in, roles, tenancy and menu management with photo uploads.
+Milestones 1 to 7 of 9: the repo, the design system, the guest app, the staff dashboard, the PostgreSQL database, and the API: staff sign-in, roles and tenancy, menu management with photo uploads, and ordering from scan to payment.
 
 The screens still run on **demo data**: a mock backend in the browser's local storage (`web/src/mock/`), shaped like the spec's data model and shared by the guest app and the dashboard. An order placed in one tab appears on the board in another, and status changes on the board reach the guest's status page. The real API is growing underneath (`server/`); milestone 8 switches the screens over to it.
 
@@ -20,7 +20,7 @@ pnpm db:reset
 pnpm dev
 ```
 
-`pnpm db:up` starts PostgreSQL in Docker on port 5433; `pnpm db:reset` builds the tables and seeds the demo venue, with its three staff accounts when `DEMO_STAFF_PASSWORD` is set in `.env`. `pnpm dev` serves the web app and, under `/api`, the API.
+`pnpm db:up` starts PostgreSQL in Docker on port 5433; `pnpm db:reset` builds the tables and seeds the demo venue, with its three staff accounts when `DEMO_STAFF_PASSWORD` is set in `.env`. `pnpm dev` serves the web app and, under `/api`, the API. It reads `.env` when it starts, so restart it after changing `.env`.
 
 Open http://localhost:5173 for the design-review page, which links to every screen and state and can fill the board with a demo service. Open the guest app in a phone-width window (390 px) and the dashboard at tablet size (1024 × 768), or use real devices on the same network with `pnpm dev --host`.
 
@@ -64,6 +64,26 @@ Hono, in `server/`. In development it runs inside `pnpm dev` at http://localhost
 | `PATCH /api/staff/menu/items/:id/availability` | owner, manager | Sold-out switch |
 | `DELETE /api/staff/menu/items/:id` | owner, manager | Archive a dish |
 | `POST /api/staff/uploads?kind=dish\|cover\|logo` | owner, manager (dish), owner (cover, logo) | Photo upload, multipart field `file`; returns `{ url }` |
+| `GET /api/staff/board` | signed in | Live board: new and preparing orders, served ones from the last 90 minutes, unanswered waiter calls |
+| `PATCH /api/staff/orders/:id` | signed in | `preparing`, `served` or `cancelled`; only forward, never back from served |
+| `POST /api/staff/calls/:id/acknowledge` | signed in | "On my way" |
+| `GET /api/staff/tables` | signed in | Every table with its open session, orders and running bill |
+| `POST /api/staff/sessions/:id/pay` | signed in | `{ method: "cash" \| "card" }`: records the payment through the cash provider and closes the table |
+| `POST /api/staff/sessions/:id/close` | signed in | Clears a table with nothing to pay |
+| `GET /api/staff/qr` | owner, manager | Tables with their QR tokens, for printing cards |
+| `POST /api/staff/tables` | owner, manager | Add a table |
+| `POST /api/staff/tables/:id/reset-qr` | owner, manager | New QR code for a table; the old one stops working |
+
+Guests address the API through their table's QR code, `/api/guest/:slug/t/:qrToken`:
+
+| Route | What |
+| --- | --- |
+| `POST …/scan` | Opens or joins the table's session; returns the menu and whether ordering is open now |
+| `POST …/orders` | `{ clientRef, guestName, note, lines: [{ itemId, qty, optionIds }] }`; the server prices it. A repeated `clientRef` returns the first order |
+| `GET …/orders/:id` | The order's status and lines, with the table's running bill |
+| `POST …/calls` | Call the waiter; repeat taps don't ring again |
+
+Everyone who scans a table shares one session until staff take payment or close it. The guest cookie is limited to that table's address, so a phone that scanned two tables can't order to the wrong one. Orders are refused outside the venue's opening hours (its own time zone; a venue with no hours set is always open), when a dish has sold out since the guest opened it (`menu_changed`), when option rules are broken, and after 10 orders from one table in 10 minutes. An empty session closes itself after two hours.
 
 Removing anything on the menu archives it, so past orders keep pointing at real rows; their names and prices were copied when ordered. Photos are checked to be images, turned upright, stripped of metadata and stored as WebP in two sizes (`name.webp` and `name-400.webp`, or `-600` for covers): in Vercel Blob when `BLOB_READ_WRITE_TOKEN` is set, otherwise in `web/public/uploads/`, which `pnpm dev` serves and git ignores.
 

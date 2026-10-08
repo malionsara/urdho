@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { ALLERGENS } from './allergens';
-import { ITEM_TAGS, LANGUAGES, STAFF_ROLES, type Language } from './types';
+import { ITEM_TAGS, LANGUAGES, PAYMENT_METHODS, STAFF_ROLES, type Language } from './types';
 
 /*
  * Request bodies the API accepts. Unknown fields are dropped, so a body can never smuggle in a
@@ -114,6 +114,36 @@ export const availabilityInput = z.object({ available: z.boolean() });
 export const PHOTO_KINDS = ['dish', 'cover', 'logo'] as const;
 export type PhotoKind = (typeof PHOTO_KINDS)[number];
 
+/* Ordering ------------------------------------------------------------------- */
+
+/** What a guest's phone sends. No prices: the server works them out from the menu. */
+export const placeOrderInput = z.object({
+  /** Made on the phone; sending the same order again (a retry) returns the first one. */
+  clientRef: z.string().min(8).max(100),
+  guestName: z.string().trim().max(40),
+  note: z.string().trim().max(280),
+  lines: z
+    .array(
+      z.object({
+        itemId: z.uuid(),
+        qty: z.number().int().min(1).max(20),
+        optionIds: uniqueList(z.uuid(), 30),
+      }),
+    )
+    .min(1)
+    .max(30),
+});
+
+/** Staff move an order along the board, or cancel it. */
+export const orderStatusInput = z.object({
+  status: z.enum(['preparing', 'served', 'cancelled']),
+});
+
+export const payInput = z.object({
+  method: z.enum(PAYMENT_METHODS),
+});
+
+export type PlaceOrderInput = z.infer<typeof placeOrderInput>;
 export type CategoryInput = z.infer<typeof categoryInput>;
 export type MenuItemInput = z.infer<typeof menuItemInput>;
 export type LoginInput = z.infer<typeof loginInput>;
