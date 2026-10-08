@@ -1,0 +1,259 @@
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-3) var(--space-4);
+  background: var(--ink);
+}
+
+.page {
+  display: grid;
+  gap: var(--space-5);
+  padding: 0 var(--space-4) var(--space-8);
+}
+
+/* Hero */
+.hero {
+  display: grid;
+  justify-items: center;
+  gap: var(--space-2);
+  padding: var(--space-8) 0 var(--space-2);
+  text-align: center;
+}
+
+.heroIcon {
+  display: grid;
+  place-items: center;
+  width: 84px;
+  height: 84px;
+  margin-bottom: var(--space-3);
+  border-radius: 50%;
+  background: var(--brand);
+  color: var(--brand-ink);
+  box-shadow:
+    0 0 0 8px var(--saffron),
+    0 0 0 14px var(--ink);
+  animation: pop 480ms var(--ease);
+}
+
+.heroIconCancelled {
+  background: var(--text-muted);
+  box-shadow:
+    0 0 0 8px var(--surface-sunken),
+    0 0 0 14px var(--border-strong);
+}
+
+.heroTitle {
+  margin-top: var(--space-3);
+  font-size: var(--text-4xl);
+  font-stretch: 78%;
+}
+
+.heroBody {
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+@keyframes pop {
+  from {
+    transform: scale(0.5) rotate(-20deg);
+    opacity: 0;
+  }
+}
+
+/* Timeline */
+.timeline {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  margin: 0;
+  padding: var(--space-5) var(--space-2);
+  list-style: none;
+  border-radius: var(--radius-md);
+  background: var(--surface-raised);
+  box-shadow: var(--shadow-sm), inset 0 0 0 1px var(--border);
+}
+
+.step {
+  position: relative;
+  display: grid;
+  justify-items: center;
+  gap: 6px;
+  text-align: center;
+}
+
+/* Connector to the previous step */
+.step + .step::before {
+  content: '';
+  position: absolute;
+  top: 22px;
+  right: calc(50% + 28px);
+  width: calc(100% - 56px);
+  height: 4px;
+  border-radius: 4px;
+  background: var(--border);
+}
+
+.step[data-state='done'] + .step::before {
+  background: var(--brand);
+}
+
+.stepDot {
+  display: grid;
+  place-items: center;
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  background: var(--surface-sunken);
+  color: var(--text-subtle);
+}
+
+.step[data-state='done'] .stepDot {
+  background: var(--brand);
+  color: var(--brand-ink);
+}
+
+.step[data-state='current'] .stepDot {
+  background: var(--ink);
+  color: var(--saffron);
+  animation: pulse 1.8s ease-out infinite;
+}
+
+.stepLabel {
+  font-size: var(--text-sm);
+  font-weight: 700;
+  color: var(--text-subtle);
+}
+
+.step[data-state='done'] .stepLabel,
+.step[data-state='current'] .stepLabel {
+  color: var(--text);
+}
+
+.stepTime {
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+@keyframes pulse {
+  0% {
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--saffron) 70%, transparent);
+  }
+  70% {
+    box-shadow: 0 0 0 12px transparent;
+  }
+  100% {
+    box-shadow: 0 0 0 0 transparent;
+  }
+}
+
+/* Order card */
+.card {
+  padding: var(--space-5) var(--space-4);
+  border-radius: var(--radius-md);
+  background: var(--surface-raised);
+  box-shadow: var(--shadow-sm), inset 0 0 0 1px var(--border);
+}
+
+.cardHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: var(--space-3);
+  margin-bottom: var(--space-4);
+}
+
+.cardTitle {
+  font-size: var(--text-2xl);
+}
+
+.cardMeta {
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+}
+
+.lines {
+  display: grid;
+  gap: var(--space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.lines li {
+  display: flex;
+  gap: var(--space-3);
+  align-items: baseline;
+}
+
+.qty {
+  flex: none;
+  min-width: 2.4ch;
+  font-weight: 800;
+  color: var(--brand-text);
+}
+
+.lineName {
+  flex: 1;
+  display: grid;
+  font-weight: 600;
+}
+
+.lineName small {
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+  font-weight: 400;
+}
+
+.linePrice {
+  font-weight: 700;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.note {
+  margin-top: var(--space-3);
+  padding: var(--space-3);
+  border-radius: var(--radius-sm);
+  background: var(--surface-sunken);
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+}
+
+/* Running bill */
+.bill {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-5) var(--space-4);
+  border-radius: var(--radius-md);
+  background: var(--ink);
+  color: var(--text-on-ink);
+  box-shadow: var(--shadow-md);
+}
+
+.billLabel {
+  font-weight: 800;
+}
+
+.billNote {
+  margin-top: 2px;
+  font-size: var(--text-sm);
+  color: var(--text-on-ink-muted);
+}
+
+.billTotal {
+  font-family: var(--font-display);
+  font-size: var(--text-3xl);
+  font-weight: 800;
+  font-stretch: 80%;
+  color: var(--saffron);
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.actions {
+  display: grid;
+  gap: var(--space-3);
+}

@@ -1,0 +1,129 @@
+import type { Allergen } from './allergens';
+
+export const LANGUAGES = ['sq', 'en', 'it', 'de'] as const;
+export type Language = (typeof LANGUAGES)[number];
+
+/** A user-facing text in each language the venue has entered. */
+export type LocalizedText = Partial<Record<Language, string>>;
+
+export type ItemTag = 'vegetarian' | 'spicy' | 'new';
+
+export type OrderStatus = 'new' | 'preparing' | 'served' | 'cancelled';
+
+export interface MenuOption {
+  id: string;
+  name: LocalizedText;
+  priceDeltaLek: number;
+  available: boolean;
+}
+
+export interface MenuOptionGroup {
+  id: string;
+  name: LocalizedText;
+  minSelect: number;
+  maxSelect: number;
+  options: MenuOption[];
+}
+
+export interface MenuItem {
+  id: string;
+  categoryId: string;
+  name: LocalizedText;
+  description: LocalizedText;
+  priceLek: number;
+  photoUrl: string | null;
+  available: boolean;
+  suggestInBasket: boolean;
+  tags: ItemTag[];
+  allergens: Allergen[];
+  optionGroups: MenuOptionGroup[];
+}
+
+export interface MenuCategory {
+  id: string;
+  name: LocalizedText;
+  items: MenuItem[];
+}
+
+export interface OpeningDay {
+  /** 0 = Monday … 6 = Sunday */
+  day: number;
+  open: boolean;
+  /** "HH:MM" in the venue's time zone */
+  from: string;
+  to: string;
+}
+
+/** Everything a venue sets in its settings. */
+export interface Venue {
+  id: string;
+  slug: string;
+  name: string;
+  logoUrl: string | null;
+  /** Wide photo at the top of the guest menu. */
+  coverUrl: string | null;
+  brandColor: string;
+  languages: Language[];
+  defaultLanguage: Language;
+  timezone: string;
+  openingHours: OpeningDay[];
+}
+
+/** The part of the venue the guest app sees. */
+export type GuestVenue = Pick<Venue, 'id' | 'slug' | 'name' | 'logoUrl' | 'coverUrl' | 'brandColor' | 'languages' | 'defaultLanguage'>;
+
+export type StaffRole = 'owner' | 'manager' | 'waiter';
+
+export interface StaffUser {
+  id: string;
+  name: string;
+  email: string;
+  role: StaffRole;
+}
+
+export type PaymentMethod = 'cash' | 'card';
+
+export interface GuestTable {
+  id: string;
+  number: number;
+}
+
+/** What the guest app loads after a scan. */
+export interface GuestMenu {
+  venue: GuestVenue;
+  table: GuestTable;
+  categories: MenuCategory[];
+}
+
+/** One basket line as the guest app sends it. The server prices it. */
+export interface OrderLineInput {
+  itemId: string;
+  qty: number;
+  optionIds: string[];
+}
+
+export interface OrderInput {
+  clientRef: string;
+  guestName: string;
+  note: string;
+  lines: OrderLineInput[];
+}
+
+export interface PlacedOrderLine {
+  itemName: LocalizedText;
+  optionNames: LocalizedText[];
+  qty: number;
+  lineTotalLek: number;
+}
+
+export interface PlacedOrder {
+  id: string;
+  status: OrderStatus;
+  createdAt: string;
+  statusChangedAt: string;
+  lines: PlacedOrderLine[];
+  note: string;
+  totalLek: number;
+  /** Running bill for every order at this table session, this one included. */
+  sessionTotalLek: number;
+}

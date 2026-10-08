@@ -1,0 +1,157 @@
+.page {
+  display: grid;
+  gap: var(--space-6);
+  padding: var(--space-5) var(--space-4) var(--space-4);
+}
+
+/* Payment: the one way to pay, shown as a bold selected card */
+.payCard {
+  display: grid;
+}
+
+.payOption {
+  display: flex;
+  gap: var(--space-4);
+  padding: var(--space-5) var(--space-4);
+  border-radius: var(--radius-md);
+  background: var(--ink);
+  color: var(--text-on-ink);
+  box-shadow: var(--shadow-md);
+}
+
+.payCheck {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  margin-top: 2px;
+  border-radius: 50%;
+  background: var(--saffron);
+  color: var(--ink);
+}
+
+.payTitle {
+  font-family: var(--font-display);
+  font-size: var(--text-2xl);
+  font-weight: 800;
+  font-stretch: 82%;
+  letter-spacing: -0.02em;
+  line-height: 1.05;
+}
+
+.payBody {
+  margin-top: var(--space-2);
+  color: var(--text-on-ink-muted);
+  font-size: var(--text-sm);
+}
+
+.payMethods {
+  display: flex;
+  gap: var(--space-2);
+  margin-top: var(--space-3);
+  font-size: var(--text-sm);
+  font-weight: 700;
+}
+
+.payMethods span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 32px;
+  padding: 0 var(--space-3);
+  border-radius: var(--radius-pill);
+  background: rgb(255 255 255 / 0.1);
+}
+
+/* Summary */
+.summary {
+  padding: var(--space-5) var(--space-4);
+  border-radius: var(--radius-md);
+  background: var(--surface-raised);
+  box-shadow: var(--shadow-sm), inset 0 0 0 1px var(--border);
+}
+
+.summaryTitle {
+  font-size: var(--text-2xl);
+  margin-bottom: var(--space-4);
+}
+
+.summaryLines {
+  display: grid;
+  gap: var(--space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.summaryLines li {
+  display: flex;
+  gap: var(--space-3);
+  align-items: baseline;
+}
+
+.qty {
+  flex: none;
+  min-width: 2.4ch;
+  font-weight: 800;
+  color: var(--brand-text);
+  font-variant-numeric: tabular-nums;
+}
+
+.summaryName {
+  flex: 1;
+  display: grid;
+  font-weight: 600;
+}
+
+.summaryName small {
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+  font-weight: 400;
+}
+
+.summaryPrice {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.note {
+  margin-top: var(--space-4);
+  padding: var(--space-3);
+  border-radius: var(--radius-sm);
+  background: var(--surface-sunken);
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+}
+
+.note strong {
+  color: var(--text);
+}
+
+.summaryTotal {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-top: var(--space-4);
+  padding-top: var(--space-4);
+  border-top: 2px dashed var(--border-strong);
+  font-weight: 700;
+}
+
+.summaryTotal span:last-child {
+  font-family: var(--font-display);
+  font-size: var(--text-3xl);
+  font-weight: 800;
+  font-stretch: 82%;
+  font-variant-numeric: tabular-nums;
+}
+
+.submit {
+  justify-content: space-between;
+}
+
+.submit[aria-busy] {
+  justify-content: center;
+}

@@ -1,0 +1,83 @@
+/* Urdho design tokens. The brand colour is per venue and set at runtime (see lib/brand.ts). */
+:root {
+  /* Brand: overridden per venue */
+  --brand: #c8432a;
+  --brand-ink: #ffffff; /* text and icons on a brand fill */
+  --brand-text: #c8432a; /* brand used as text on light surfaces, darkened if too pale */
+
+  /* Urdho's own palette: warm near-black, cream paper, saffron accent (from Albanian kilim rugs) */
+  --ink: #17120f;
+  --ink-2: #2b231e;
+  --ink-3: #463a32;
+  --paper: #fbf7f1;
+  --saffron: #f4b63f;
+  --saffron-deep: #b97f0c;
+  --cream: #fff3dc;
+
+  /* Surfaces and text */
+  --surface: var(--paper);
+  --surface-raised: #ffffff;
+  --surface-sunken: #f2ece4;
+  --text: var(--ink);
+  --text-muted: #5d534b;
+  --text-subtle: #8e8279;
+  --text-on-ink: #fbf7f1;
+  --text-on-ink-muted: #b9ada3;
+  --border: #e9e1d7;
+  --border-strong: #d6cabd;
+
+  /* Status */
+  --success: #1d8049;
+  --success-soft: #e2f3e8;
+  --warning: #93560a;
+  --warning-soft: #fdf0d8;
+  --danger: #c0281c;
+  --danger-soft: #fde4e0;
+
+  /* Type */
+  --font-display: 'Bricolage Grotesque Variable', 'Arial Narrow', system-ui, sans-serif;
+  --font-body: 'Inter Variable', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --text-xs: 0.75rem;
+  --text-sm: 0.875rem;
+  --text-md: 1rem;
+  --text-lg: 1.125rem;
+  --text-xl: 1.375rem;
+  --text-2xl: 1.75rem;
+  --text-3xl: 2.25rem;
+  --text-4xl: 2.875rem;
+  --leading-tight: 1.02;
+  --leading-normal: 1.45;
+
+  /* Space (4 px grid) */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+
+  /* Shape and depth */
+  --radius-sm: 10px;
+  --radius-md: 16px;
+  --radius-lg: 24px;
+  --radius-pill: 999px;
+  --shadow-sm: 0 1px 2px rgb(23 18 15 / 0.08);
+  --shadow-md: 0 6px 16px rgb(23 18 15 / 0.12), 0 1px 3px rgb(23 18 15 / 0.08);
+  --shadow-lg: 0 18px 40px rgb(23 18 15 / 0.22), 0 3px 8px rgb(23 18 15 / 0.1);
+
+  /* Layout */
+  --tap: 44px;
+  --guest-width: 480px;
+  --ease: cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+
+/* Derived brand tints. Custom properties resolve where they are declared, so any element that
+   sets its own --brand (marked with data-brand) must declare these again. */
+:root,
+[data-brand] {
+  --brand-soft: color-mix(in srgb, var(--brand) 12%, white);
+  --brand-strong: color-mix(in srgb, var(--brand) 80%, black);
+}
