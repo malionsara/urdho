@@ -1,12 +1,12 @@
 /*
- * How restaurant owners reach the Urdho team from the front page. Until both are filled in, the
- * contact buttons are drawn with a dashed outline and "contact missing", so the page can't go live
- * unnoticed with dead buttons.
+ * How restaurant owners reach the Urdho team from the front page. A button whose value is empty is
+ * drawn with a dashed outline and "contact missing", so a dead button can't go live unnoticed.
  */
 export const CONTACT = {
   /** The WhatsApp number in international form: 355 and the number without its first 0, e.g. 35569XXXXXXX. */
-  whatsapp: '',
-  email: '',
+  whatsapp: '355675490330',
+  /** Forwarded to the team's inbox by ImprovMX (MX records on urdho.al). */
+  email: 'kontakt@urdho.al',
 };
 
 export interface ContactLinks {
