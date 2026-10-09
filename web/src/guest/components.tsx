@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router';
 import type { ItemTag, Language } from '@shared/types';
 import { brandStyle } from '../lib/brand';
+import { navMotion, transitionName } from '../lib/motion';
 import { Button } from '../ui/Button';
 import { Icon, type IconName } from '../ui/Icon';
 import { KilimBand } from '../ui/Kilim';
@@ -24,8 +25,8 @@ export function GuestShell({ brand, children }: { brand: string | null; children
 export function TopBar({ title, backTo, right }: { title: string; backTo: string; right?: ReactNode }) {
   const { t } = useTranslation();
   return (
-    <header className={styles.topBar}>
-      <Link to={backTo} className={styles.backButton} aria-label={t('common.back')}>
+    <header className={styles.topBar} style={transitionName('guest-top-bar')}>
+      <Link to={backTo} viewTransition state={navMotion('back')} className={styles.backButton} aria-label={t('common.back')}>
         <Icon name="back" size={22} strokeWidth={2.4} />
       </Link>
       <h1 className={styles.topBarTitle}>{title}</h1>
@@ -142,7 +143,10 @@ export function BottomDock({ children }: { children: ReactNode }) {
   return (
     <>
       <div className={styles.dockSpacer} aria-hidden />
-      <div className={styles.dock}>{children}</div>
+      {/* Named, so the bar stays put between screens and only its contents change. */}
+      <div className={styles.dock} style={transitionName('guest-dock')}>
+        {children}
+      </div>
     </>
   );
 }

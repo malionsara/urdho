@@ -53,7 +53,7 @@ export function CheckoutScreen() {
       {
         onSuccess: ({ orderId }) => {
           basket.clear();
-          navigate(`${base}/order/${orderId}`, { replace: true });
+          navigate(`${base}/order/${orderId}`, { replace: true, viewTransition: true });
         },
         onError: (error) => {
           // Something on the menu changed while the guest was choosing: take the sold-out dishes

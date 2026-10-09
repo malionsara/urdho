@@ -39,6 +39,7 @@ export function Button({ variant, size, block, loading, className, children, dis
 
 interface ButtonLinkProps extends LinkProps, StyleProps {}
 
+/** A link styled as a button. Like a tap on a button, it moves to the next screen with a transition. */
 export function ButtonLink({ variant, size, block, className, ...rest }: ButtonLinkProps) {
-  return <Link {...rest} className={classes({ variant, size, block }, className)} />;
+  return <Link viewTransition {...rest} className={classes({ variant, size, block }, className)} />;
 }

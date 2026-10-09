@@ -3,6 +3,7 @@ import { Link } from 'react-router';
 import { formatLek } from '@shared/money';
 import { defaultOptionIds, lineTotalLek } from '@shared/pricing';
 import type { MenuItem } from '@shared/types';
+import { animateChange, transitionName } from '../../lib/motion';
 import { ButtonLink } from '../../ui/Button';
 import { Icon } from '../../ui/Icon';
 import { KilimBand } from '../../ui/Kilim';
@@ -42,14 +43,14 @@ export function BasketScreen() {
       <main className={styles.page}>
         <ul className={styles.lines}>
           {basket.lines.map((line) => (
-            <li key={line.id}>
+            <li key={line.id} style={transitionName(`basket-line-${line.id}`)}>
               <LineRow line={line} />
             </li>
           ))}
         </ul>
 
         {addons.length > 0 && (
-          <section className={styles.addons} aria-labelledby="addons-title">
+          <section className={styles.addons} aria-labelledby="addons-title" style={transitionName('basket-addons')}>
             <KilimBand height={16} />
             <h2 id="addons-title" className={styles.addonsTitle}>
               {t('basket.addons')}
@@ -62,7 +63,8 @@ export function BasketScreen() {
           </section>
         )}
 
-        <section className={styles.noteSection}>
+        {/* Named, like the lines above them, so they glide up when a line goes. */}
+        <section className={styles.noteSection} style={transitionName('basket-note')}>
           <TextArea
             label={t('basket.noteLabel')}
             placeholder={t('basket.notePlaceholder')}
@@ -73,7 +75,7 @@ export function BasketScreen() {
           <Notice>{t('basket.allergyNotice')}</Notice>
         </section>
 
-        <div className={styles.totalRow}>
+        <div className={styles.totalRow} style={transitionName('basket-total')}>
           <span>{t('common.total')}</span>
           <span className={styles.totalValue}>{formatLek(basket.totalLek)}</span>
         </div>
@@ -112,13 +114,14 @@ function LineRow({ line }: { line: BasketLine }) {
           <Stepper
             size="sm"
             value={line.qty}
-            onChange={(qty) => basket.setQty(line.id, qty)}
+            // The other lines close up smoothly when one is removed.
+            onChange={(qty) => animateChange(() => basket.setQty(line.id, qty))}
             removeIcon
             decreaseLabel={line.qty <= 1 ? t('basket.remove') : t('item.decrease')}
             increaseLabel={t('item.increase')}
           />
           {item.optionGroups.length > 0 && (
-            <Link to={`${base}/item/${item.id}?line=${line.id}`} className={styles.editLink}>
+            <Link to={`${base}/item/${item.id}?line=${line.id}`} viewTransition className={styles.editLink}>
               <Icon name="pencil" size={16} />
               {t('basket.edit')}
             </Link>
@@ -136,8 +139,8 @@ function AddonCard({ item }: { item: MenuItem }) {
   const options = defaultOptionIds(item);
 
   return (
-    <div className={styles.addon}>
-      <Link to={`${base}/item/${item.id}`} className={styles.addonLink}>
+    <div className={styles.addon} style={transitionName(`addon-${item.id}`)}>
+      <Link to={`${base}/item/${item.id}`} viewTransition className={styles.addonLink}>
         <DishImage photoUrl={item.photoUrl} name={name} variant="card" />
         <span className={styles.addonName}>{name}</span>
         <span className={styles.addonPrice}>{formatLek(lineTotalLek(item, options, 1))}</span>
@@ -147,7 +150,8 @@ function AddonCard({ item }: { item: MenuItem }) {
         className={styles.addonAdd}
         aria-label={t('basket.addAddon', { name })}
         onClick={() => {
-          basket.add(item.id, options, 1);
+          // The card leaves the strip as the new line appears in the basket.
+          animateChange(() => basket.add(item.id, options, 1));
           toast.show(t('item.added'));
         }}
       >

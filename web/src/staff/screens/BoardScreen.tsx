@@ -1,13 +1,14 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { formatLek } from '@shared/money';
-import type { OrderStatus, Venue } from '@shared/types';
+import type { Venue } from '@shared/types';
 import { Button } from '../../ui/Button';
 import { Icon } from '../../ui/Icon';
 import { KilimBand } from '../../ui/Kilim';
-import { setOrderStatus, acknowledgeCall, type BoardOrder } from '../api';
+import { transitionName } from '../../lib/motion';
+import { acknowledgeCall, type BoardOrder } from '../api';
 import { clockTime, ConfirmDialog, PageHeader, useElapsed, useNow, useStaffText } from '../components';
-import { useBoardQuery, useStaffMutation, useVenueQuery } from '../queries';
+import { useBoardQuery, useOrderStatusMutation, useStaffMutation, useVenueQuery } from '../queries';
 import { useStaff } from '../session';
 import styles from './BoardScreen.module.css';
 
@@ -140,7 +141,7 @@ function OrderCard({ order, nowMs, venue }: { order: BoardOrder; nowMs: number; 
   const { t } = useTranslation();
   const text = useStaffText(venue);
   const elapsed = useElapsed();
-  const update = useStaffMutation(({ id, status }: { id: string; status: Exclude<OrderStatus, 'new'> }) => setOrderStatus(id, status));
+  const update = useOrderStatusMutation();
   const [confirmCancel, setConfirmCancel] = useState(false);
 
   const column = order.status as Column;
@@ -155,7 +156,14 @@ function OrderCard({ order, nowMs, venue }: { order: BoardOrder; nowMs: number; 
       : t('staff.board.servedAt', { time: elapsed(order.statusChangedAt, nowMs) });
 
   return (
-    <article className={styles.card} data-column={column} data-fresh={fresh || undefined} aria-label={t('staff.board.cardLabel', { number: order.tableNumber })}>
+    <article
+      className={styles.card}
+      data-column={column}
+      data-fresh={fresh || undefined}
+      aria-label={t('staff.board.cardLabel', { number: order.tableNumber })}
+      // Named, so a tapped card glides to its next column instead of jumping.
+      style={transitionName(`order-${order.id}`, 'order-card')}
+    >
       <header className={styles.cardHeader}>
         <span className={styles.tableNo}>
           <small>{t('staff.board.tableShort')}</small>

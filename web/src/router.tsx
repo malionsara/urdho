@@ -1,6 +1,7 @@
 import { createBrowserRouter, Outlet, ScrollRestoration } from 'react-router';
 import { GuestLayout } from './guest/GuestLayout';
 import { Home } from './Home';
+import { useNavMotion } from './lib/motion';
 import { BasketScreen } from './guest/screens/BasketScreen';
 import { CheckoutScreen } from './guest/screens/CheckoutScreen';
 import { ItemScreen } from './guest/screens/ItemScreen';
@@ -9,6 +10,7 @@ import { OrderStatusScreen } from './guest/screens/OrderStatusScreen';
 import { NotFound } from './NotFound';
 
 function Root() {
+  useNavMotion();
   return (
     <>
       <ScrollRestoration />

@@ -307,6 +307,10 @@ a.item:hover .itemImage img {
   box-shadow:
     0 12px 30px color-mix(in srgb, var(--brand) 45%, transparent),
     var(--shadow-md);
+}
+
+/* Slides up when the first dish goes into the basket. */
+.basketBarIn {
   animation: bar-in 320ms var(--ease);
 }
 
@@ -343,5 +347,42 @@ a.item:hover .itemImage img {
   from {
     opacity: 0;
     transform: translateY(20px);
+  }
+}
+
+/* Dishes rise into place, one after another, the first time the menu opens. */
+.rise {
+  animation: rise var(--duration-slow) var(--ease) both;
+  animation-delay: calc(var(--i, 0) * 45ms);
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+}
+
+/* A count that just changed: a quick spring. */
+.bump {
+  animation: bump var(--duration) var(--ease-spring);
+}
+
+@keyframes bump {
+  from {
+    transform: scale(1.3);
+  }
+}
+
+/* A total that just changed rolls up into place. */
+.roll {
+  display: inline-block;
+  animation: roll var(--duration) var(--ease);
+}
+
+@keyframes roll {
+  from {
+    opacity: 0;
+    transform: translateY(40%);
   }
 }

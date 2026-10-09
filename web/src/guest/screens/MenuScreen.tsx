@@ -1,6 +1,6 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type CSSProperties } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Link, useNavigate } from 'react-router';
+import { Link, useNavigate, useViewTransitionState } from 'react-router';
 import { formatLek } from '@shared/money';
 import type { MenuItem } from '@shared/types';
 import { Icon } from '../../ui/Icon';
@@ -10,11 +10,21 @@ import { BottomDock, LanguageSwitcher, PoweredBy, ServiceBanner, TagBadge, Venue
 import { useGuest } from '../GuestContext';
 import styles from './MenuScreen.module.css';
 
+/** The dishes rise into place the first time the menu opens, not every time a guest comes back to it. */
+let menuShown = false;
+
 export function MenuScreen() {
   const { t } = useTranslation();
   const { menu, text, basket, base } = useGuest();
   const { venue, table, categories } = menu;
   const [active, setActive] = useState(categories[0]?.id);
+  const [riseIn] = useState(() => !menuShown);
+  // The basket bar slides up when the first dish goes in, not each time the menu is shown again.
+  const [countOnArrival] = useState(basket.count);
+  useEffect(() => {
+    menuShown = true;
+  }, []);
+  const position = new Map(categories.flatMap((c) => c.items).map((item, i) => [item.id, i]));
   const tabsRef = useRef<HTMLDivElement>(null);
   // While a tapped tab scrolls the page, ignore the categories it passes on the way.
   const scrollLock = useRef<ReturnType<typeof setTimeout>>(undefined);
@@ -106,7 +116,12 @@ export function MenuScreen() {
             </h2>
             <ul className={styles.items}>
               {c.items.map((item) => (
-                <li key={item.id}>
+                <li
+                  key={item.id}
+                  className={riseIn ? styles.rise : undefined}
+                  // Stagger the first screenful; everything below it is already in place when scrolled to.
+                  style={riseIn ? ({ '--i': Math.min(position.get(item.id) ?? 0, 8) } as CSSProperties) : undefined}
+                >
                   <ItemRow item={item} to={`${base}/item/${item.id}`} />
                 </li>
               ))}
@@ -118,10 +133,15 @@ export function MenuScreen() {
 
       {basket.count > 0 && (
         <BottomDock>
-          <Link to={`${base}/basket`} className={styles.basketBar}>
-            <span className={styles.basketCount}>{basket.count}</span>
+          <Link to={`${base}/basket`} viewTransition className={`${styles.basketBar} ${countOnArrival === 0 ? styles.basketBarIn : ''}`}>
+            {/* Keyed, so every dish added bumps the count and rolls the total. */}
+            <span key={basket.count} className={`${styles.basketCount} ${basket.count !== countOnArrival ? styles.bump : ''}`}>
+              {basket.count}
+            </span>
             <span className={styles.basketLabel}>{t('menu.viewBasket')}</span>
-            <span className={styles.basketTotal}>{formatLek(basket.totalLek)}</span>
+            <span key={basket.totalLek} className={`${styles.basketTotal} ${basket.count !== countOnArrival ? styles.roll : ''}`}>
+              {formatLek(basket.totalLek)}
+            </span>
           </Link>
         </BottomDock>
       )}
@@ -133,6 +153,8 @@ function ItemRow({ item, to }: { item: MenuItem; to: string }) {
   const { t } = useTranslation();
   const { text, basket, toast } = useGuest();
   const navigate = useNavigate();
+  // While this dish's page opens (or closes), its photo is the one that grows into the page.
+  const opening = useViewTransitionState(to);
   const name = text(item.name);
   const inBasket = basket.quantityOf(item.id);
   const soldOut = !item.available;
@@ -141,7 +163,7 @@ function ItemRow({ item, to }: { item: MenuItem; to: string }) {
   // Dishes with choices open the item page; simple ones go straight into the basket.
   function quickAdd() {
     if (item.optionGroups.length > 0) {
-      navigate(to);
+      navigate(to, { viewTransition: true });
       return;
     }
     basket.add(item.id, [], 1);
@@ -163,7 +185,7 @@ function ItemRow({ item, to }: { item: MenuItem; to: string }) {
         <p className={styles.itemPrice}>{formatLek(item.priceLek)}</p>
       </div>
       <div className={styles.itemImage}>
-        <DishImage photoUrl={item.photoUrl} name={name} muted={soldOut} />
+        <DishImage photoUrl={item.photoUrl} name={name} muted={soldOut} transitionName={opening ? 'dish-photo' : undefined} />
         {item.tags.includes('new') && !soldOut && <span className={styles.newFlag}>{t('tags.new')}</span>}
         {soldOut && <span className={styles.soldOutFlag}>{t('menu.soldOut')}</span>}
       </div>
@@ -180,7 +202,7 @@ function ItemRow({ item, to }: { item: MenuItem; to: string }) {
 
   return (
     <div className={styles.itemWrap}>
-      <Link to={to} className={styles.item}>
+      <Link to={to} viewTransition className={styles.item}>
         {body}
       </Link>
       <button
@@ -189,7 +211,13 @@ function ItemRow({ item, to }: { item: MenuItem; to: string }) {
         onClick={quickAdd}
         aria-label={inBasket > 0 ? `${t('menu.inBasket', { count: inBasket })}. ${t('basket.addAddon', { name })}` : t('basket.addAddon', { name })}
       >
-        {inBasket > 0 ? <span className={styles.quickAddCount}>{inBasket}</span> : <Icon name="plus" size={22} strokeWidth={2.8} />}
+        {inBasket > 0 ? (
+          <span key={inBasket} className={`${styles.quickAddCount} ${styles.bump}`}>
+            {inBasket}
+          </span>
+        ) : (
+          <Icon name="plus" size={22} strokeWidth={2.8} />
+        )}
       </button>
     </div>
   );

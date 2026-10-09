@@ -89,6 +89,120 @@ img {
   border: 0;
 }
 
+/*
+ * Screen changes. Links and navigations marked viewTransition run inside a View Transition
+ * (web/src/lib/motion.ts): the old screen eases out and the new one slides in from the side being
+ * tapped towards; going back reverses it (data-nav on <html>). Named pieces move on their own: the
+ * dish photo grows from its menu card into the dish page, the bottom bar and top bar stay put and
+ * change in place, order cards glide between board columns. Browsers without View Transitions
+ * simply switch screens.
+ */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: var(--duration);
+  animation-timing-function: var(--ease);
+  animation-fill-mode: both;
+}
+
+::view-transition-old(root) {
+  animation-name: screen-out;
+}
+
+::view-transition-new(root) {
+  animation-name: screen-in;
+}
+
+html[data-nav='back']::view-transition-old(root) {
+  animation-name: screen-out-back;
+}
+
+html[data-nav='back']::view-transition-new(root) {
+  animation-name: screen-in-back;
+}
+
+/* Switching pages in the staff dashboard: a quick cross-fade, the rail stays where it is. */
+html[data-nav='swap']::view-transition-old(root) {
+  animation-name: fade-out;
+  animation-duration: var(--duration-fast);
+}
+
+html[data-nav='swap']::view-transition-new(root) {
+  animation-name: fade-in;
+  animation-duration: var(--duration-fast);
+}
+
+/* A change within the screen (animateChange): the page holds still; only the named pieces move. */
+html[data-nav='change']::view-transition-old(root) {
+  display: none;
+}
+
+html[data-nav='change']::view-transition-new(root) {
+  animation: none;
+}
+
+::view-transition-group(dish-photo) {
+  animation-duration: var(--duration-slow);
+  animation-timing-function: var(--ease);
+}
+
+::view-transition-old(dish-photo),
+::view-transition-new(dish-photo) {
+  height: 100%;
+  object-fit: cover;
+}
+
+::view-transition-group(guest-dock),
+::view-transition-group(guest-top-bar) {
+  animation-duration: var(--duration);
+  animation-timing-function: var(--ease);
+}
+
+/* On its own: a browser that doesn't know transition classes drops just this rule. */
+::view-transition-group(*.order-card) {
+  animation-duration: var(--duration-slow);
+  animation-timing-function: var(--ease);
+}
+
+@keyframes screen-out {
+  to {
+    opacity: 0;
+    transform: translateX(-5%);
+  }
+}
+
+@keyframes screen-in {
+  from {
+    opacity: 0;
+    transform: translateX(7%);
+  }
+}
+
+@keyframes screen-out-back {
+  to {
+    opacity: 0;
+    transform: translateX(5%);
+  }
+}
+
+@keyframes screen-in-back {
+  from {
+    opacity: 0;
+    transform: translateX(-7%);
+  }
+}
+
+@keyframes fade-out {
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
@@ -97,5 +211,18 @@ img {
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
+  }
+
+  /* Less motion: screens still cross-fade gently, but nothing slides, grows or glides. */
+  ::view-transition-group(*) {
+    animation: none !important;
+  }
+
+  ::view-transition-old(*) {
+    animation: fade-out 200ms ease both !important;
+  }
+
+  ::view-transition-new(*) {
+    animation: fade-in 200ms ease both !important;
   }
 }

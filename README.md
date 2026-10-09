@@ -175,6 +175,12 @@ Bold and photo-first, in the spirit of the Nando's eat-in ordering flow but with
 
 Design tokens live in `web/src/styles/tokens.css`. Each venue's brand colour is applied at runtime by `web/src/lib/brand.ts`, which also picks a readable text colour for it; the kilim bands, tabs and buttons all follow it, in the guest app and the dashboard alike.
 
+## Motion
+
+Screens change with View Transitions (`web/src/lib/motion.ts`, styles in `web/src/styles/global.css`): the next screen slides in and going back slides the other way; a dish photo grows from its menu card into the dish page and shrinks back; the bottom bar and top bar stay put and change in place; basket lines close up when one is removed; order cards glide to their next column on the board, which updates the moment a card is tapped and goes back if the server refuses. Smaller touches: dishes rise in on the first visit, photos fade in as they arrive, counts bump and totals roll.
+
+Links get it with React Router's `viewTransition`; in-screen changes go through `animateChange()`. Dashboard pages are nested routes, whose links can't carry the option, so the rail asks the router directly. Browsers without View Transitions switch screens instantly. With "reduce motion" switched on (on Windows: Settings → Accessibility → Visual effects → Animation effects off) screens only cross-fade, and nothing slides, grows or glides.
+
 ## Sound on the dashboard
 
 Browsers only play sound after someone taps the page, so the board opens on a "Start service" screen. That tap unlocks the new-order chime (two rising notes) and the waiter-call chime (three quick notes), synthesised with the Web Audio API so there is no audio file to load, and asks the screen to stay awake. After a reload, the tap is needed again.

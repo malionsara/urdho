@@ -242,6 +242,14 @@
   border-radius: 8px;
 }
 
+.radio,
+.checkbox {
+  transition:
+    border-width var(--duration-fast) var(--ease-spring),
+    border-color var(--duration-fast) var(--ease),
+    background-color var(--duration-fast) var(--ease);
+}
+
 .option[data-checked] .radio {
   border: 8px solid var(--brand);
 }
@@ -249,6 +257,18 @@
 .option[data-checked] .checkbox {
   border-color: var(--brand);
   background: var(--brand);
+}
+
+/* The tick pops in with a little spring. */
+.option[data-checked] .checkbox svg {
+  animation: tick var(--duration) var(--ease-spring);
+}
+
+@keyframes tick {
+  from {
+    transform: scale(0.3);
+    opacity: 0;
+  }
 }
 
 .optionName {

@@ -4,6 +4,7 @@ import { useLocation, useNavigate, useParams, useSearchParams } from 'react-rout
 import { formatLek, formatLekDelta } from '@shared/money';
 import { checkSelection, defaultOptionIds, lineTotalLek } from '@shared/pricing';
 import type { MenuItem, MenuOptionGroup } from '@shared/types';
+import { navMotion } from '../../lib/motion';
 import { Button, ButtonLink } from '../../ui/Button';
 import { Icon } from '../../ui/Icon';
 import { Badge, DishImage, Stepper } from '../../ui/primitives';
@@ -45,9 +46,10 @@ function ItemDetails({ item }: { item: MenuItem }) {
   const total = lineTotalLek(item, selected, qty);
 
   function leave(fallback: string) {
-    // Going back keeps the menu's scroll position; a fresh tab has nothing to go back to.
+    // Going back keeps the menu's scroll position (and replays the opening transition in reverse);
+    // a fresh tab has nothing to go back to.
     if (location.key !== 'default') navigate(-1);
-    else navigate(fallback, { replace: true });
+    else navigate(fallback, { replace: true, viewTransition: true, state: navMotion('back') });
   }
 
   function toggle(group: MenuOptionGroup, optionId: string) {
@@ -79,7 +81,7 @@ function ItemDetails({ item }: { item: MenuItem }) {
   return (
     <>
       <div className={styles.hero}>
-        <DishImage photoUrl={item.photoUrl} name={name} variant="hero" />
+        <DishImage photoUrl={item.photoUrl} name={name} variant="hero" transitionName="dish-photo" />
         <button type="button" className={styles.heroBack} onClick={() => leave(base)} aria-label={t('common.back')}>
           <Icon name="back" size={22} strokeWidth={2.2} />
         </button>

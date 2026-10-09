@@ -77,6 +77,17 @@
   transform: scale(0.9);
 }
 
+.stepperNumber {
+  display: inline-block;
+  animation: number-bump var(--duration) var(--ease-spring);
+}
+
+@keyframes number-bump {
+  from {
+    transform: scale(1.35);
+  }
+}
+
 .stepperButton:disabled {
   color: var(--border-strong);
   cursor: not-allowed;
@@ -210,6 +221,28 @@
   width: 100%;
   aspect-ratio: 1;
   max-height: 56vh;
+}
+
+/* Photos fade in as they arrive (revealWhenLoaded sets data-loaded). */
+.fadeIn {
+  transition: opacity var(--duration) var(--ease);
+}
+
+.fadeIn:not([data-loaded]) {
+  opacity: 0;
+}
+
+.dishHeroFrame {
+  position: relative;
+  overflow: hidden;
+}
+
+.dishHeroLayer {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
 .dishMuted {

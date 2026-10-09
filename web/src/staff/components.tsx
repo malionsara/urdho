@@ -1,6 +1,8 @@
-import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
+import { createContext, useCallback, useContext, useEffect, useRef, useState, type MouseEvent, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { NavLink } from 'react-router';
+import { navMotion, transitionName } from '../lib/motion';
+import { router } from '../router';
 import type { LocalizedText, Venue } from '@shared/types';
 import { localize } from '../i18n';
 import { Button } from '../ui/Button';
@@ -19,6 +21,19 @@ const NAV: { page: string; icon: IconName }[] = [
   { page: 'settings', icon: 'sliders' },
 ];
 
+/**
+ * Switches dashboard page with a quick cross-fade. The dashboard's pages are nested routes, and
+ * React Router drops the view-transition option on their links, so the click goes to the router
+ * itself. Opening in a new tab (middle click, Ctrl or Cmd) still works as a normal link.
+ */
+function swapPage(to: string) {
+  return (event: MouseEvent<HTMLAnchorElement>) => {
+    if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+    event.preventDefault();
+    void router.navigate(to, { viewTransition: true, state: navMotion('swap') });
+  };
+}
+
 export function Rail({ venue, badges }: { venue: Venue | undefined; badges: Partial<Record<string, number>> }) {
   const { t } = useTranslation();
   const { user, can, signOut, service } = useStaff();
@@ -31,14 +46,14 @@ export function Rail({ venue, badges }: { venue: Venue | undefined; badges: Part
     .toLocaleUpperCase('sq');
 
   return (
-    <nav className={styles.rail} aria-label={t('staff.nav.label')}>
+    <nav className={styles.rail} aria-label={t('staff.nav.label')} style={transitionName('staff-rail')}>
       <div className={styles.railVenue} title={venue?.name}>
         {venue?.logoUrl ? <img src={venue.logoUrl} alt="" /> : <span>{initials}</span>}
       </div>
       <ul className={styles.railNav}>
         {NAV.filter((n) => can(n.page)).map((n) => (
           <li key={n.page}>
-            <NavLink to={`/staff/${n.page}`} className={styles.railLink}>
+            <NavLink to={`/staff/${n.page}`} className={styles.railLink} onClick={swapPage(`/staff/${n.page}`)}>
               <span className={styles.railIcon}>
                 <Icon name={n.icon} size={22} />
                 {badges[n.page] ? <span className={styles.railBadge}>{badges[n.page]}</span> : null}

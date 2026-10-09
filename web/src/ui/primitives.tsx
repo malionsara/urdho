@@ -1,4 +1,5 @@
-import { useId, type ReactNode, type TextareaHTMLAttributes, type InputHTMLAttributes } from 'react';
+import { useId, useState, type ReactNode, type TextareaHTMLAttributes, type InputHTMLAttributes } from 'react';
+import { transitionName } from '../lib/motion';
 import { Icon, type IconName } from './Icon';
 import styles from './primitives.module.css';
 
@@ -31,6 +32,8 @@ interface StepperProps {
 
 export function Stepper({ value, onChange, min = 1, max = 99, size = 'md', decreaseLabel, increaseLabel, removeIcon }: StepperProps) {
   const showTrash = removeIcon && value <= 1;
+  // Bump the number when it changes, not when the stepper first appears.
+  const [first] = useState(value);
   return (
     <div className={`${styles.stepper} ${styles[`stepper_${size}`]}`}>
       <button
@@ -43,7 +46,10 @@ export function Stepper({ value, onChange, min = 1, max = 99, size = 'md', decre
         <Icon name={showTrash ? 'trash' : 'minus'} size={size === 'sm' ? 16 : 20} strokeWidth={2.2} />
       </button>
       <output className={styles.stepperValue} aria-live="polite">
-        {value}
+        {/* Keyed, so each change replays the little bump. */}
+        <span key={value} className={value !== first ? styles.stepperNumber : undefined}>
+          {value}
+        </span>
       </output>
       <button
         type="button"
@@ -127,6 +133,8 @@ interface DishImageProps {
   variant?: 'small' | 'thumb' | 'card' | 'hero';
   muted?: boolean;
   className?: string;
+  /** A view-transition-name: the photo with the same name on the next screen grows out of this one. */
+  transitionName?: string;
 }
 
 const SIZES: Record<NonNullable<DishImageProps['variant']>, string> = {
@@ -141,24 +149,64 @@ function srcSetFor(url: string): string | undefined {
   return url.endsWith('.webp') ? `${url.replace(/\.webp$/, '-400.webp')} 400w, ${url} 800w` : undefined;
 }
 
+/**
+ * Fades a photo in once it arrives. One the browser already holds shows at once, so a photo coming
+ * back into view (or growing into the next screen) never blinks.
+ */
+function revealWhenLoaded(img: HTMLImageElement | null) {
+  if (!img) return;
+  const reveal = () => (img.dataset.loaded = '');
+  if (img.complete) reveal();
+  else {
+    img.addEventListener('load', reveal, { once: true });
+    img.addEventListener('error', reveal, { once: true });
+  }
+}
+
 /** A dish photo, or, when the venue has none, a quiet kilim tile. */
-export function DishImage({ photoUrl, name, variant = 'thumb', muted, className }: DishImageProps) {
+export function DishImage({ photoUrl, name, variant = 'thumb', muted, className, transitionName: vtName }: DishImageProps) {
   const cls = [styles.dish, styles[`dish_${variant}`], muted && styles.dishMuted, className].filter(Boolean).join(' ');
+  const style = transitionName(vtName);
+
+  if (photoUrl && variant === 'hero') {
+    // The small copy the menu already showed sits underneath, so the large photo has something to
+    // fade in over, and the photo growing in from the menu card never passes through an empty frame.
+    const small = srcSetFor(photoUrl) ? photoUrl.replace(/\.webp$/, '-400.webp') : photoUrl;
+    return (
+      <div className={`${cls} ${styles.dishHeroFrame}`} style={style}>
+        <img src={small} alt="" aria-hidden className={styles.dishHeroLayer} decoding="sync" />
+        <img
+          key={photoUrl}
+          ref={revealWhenLoaded}
+          src={photoUrl}
+          srcSet={srcSetFor(photoUrl)}
+          sizes={SIZES.hero}
+          alt={name}
+          className={`${styles.dishHeroLayer} ${styles.fadeIn}`}
+          loading="eager"
+          decoding="async"
+        />
+      </div>
+    );
+  }
   if (photoUrl) {
     return (
       <img
+        key={photoUrl}
+        ref={revealWhenLoaded}
         src={photoUrl}
         srcSet={srcSetFor(photoUrl)}
         sizes={SIZES[variant]}
-        alt={variant === 'hero' ? name : ''}
-        className={cls}
-        loading={variant === 'hero' ? 'eager' : 'lazy'}
+        alt=""
+        className={`${cls} ${styles.fadeIn}`}
+        style={style}
+        loading="lazy"
         decoding="async"
       />
     );
   }
   return (
-    <div className={`${cls} ${styles.dishPlaceholder}`} aria-hidden>
+    <div className={`${cls} ${styles.dishPlaceholder}`} style={style} aria-hidden>
       <svg viewBox="0 0 14 14" className={styles.dishMark}>
         <polygon points="7,0 14,7 7,14 0,7" style={{ fill: 'var(--saffron)' }} />
         <polygon points="7,4 10,7 7,10 4,7" style={{ fill: 'var(--brand)' }} />

@@ -1,5 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import type { OrderStatus } from '@shared/types';
 import { shouldRetry } from '../lib/http';
+import { animateChange } from '../lib/motion';
 import * as api from './api';
 
 /** The spec's polling interval for the live board. */
@@ -11,8 +13,42 @@ export function useMeQuery() {
   return useQuery({ queryKey: ME_KEY, queryFn: api.fetchMe, staleTime: Infinity, retry: shouldRetry });
 }
 
+const BOARD_KEY = ['staff', 'board'];
+
 export function useBoardQuery(enabled = true) {
-  return useQuery({ queryKey: ['staff', 'board'], queryFn: api.fetchBoard, refetchInterval: BOARD_POLL_MS, enabled, retry: shouldRetry });
+  return useQuery({ queryKey: BOARD_KEY, queryFn: api.fetchBoard, refetchInterval: BOARD_POLL_MS, enabled, retry: shouldRetry });
+}
+
+type Board = Awaited<ReturnType<typeof api.fetchBoard>>;
+type NextStatus = Exclude<OrderStatus, 'new'>;
+
+/**
+ * Moves an order on the board the moment it's tapped (the card glides to its next column, a
+ * cancelled one leaves), then saves it. If the server refuses, the board goes back to how it was.
+ */
+export function useOrderStatusMutation() {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, status }: { id: string; status: NextStatus }) => api.setOrderStatus(id, status),
+    onMutate: async ({ id, status }) => {
+      // A poll landing mid-change would put the card back for a moment.
+      await client.cancelQueries({ queryKey: BOARD_KEY });
+      const before = client.getQueryData<Board>(BOARD_KEY);
+      if (before) {
+        const statusChangedAt = new Date().toISOString();
+        const orders =
+          status === 'cancelled'
+            ? before.orders.filter((o) => o.id !== id)
+            : before.orders.map((o) => (o.id === id ? { ...o, status, statusChangedAt } : o));
+        animateChange(() => client.setQueryData<Board>(BOARD_KEY, { ...before, orders }));
+      }
+      return { before };
+    },
+    onError: (_error, _vars, context) => {
+      if (context?.before) animateChange(() => client.setQueryData(BOARD_KEY, context.before));
+    },
+    onSettled: () => client.invalidateQueries({ queryKey: ['staff'], predicate: (q) => q.queryKey[1] !== 'me' }),
+  });
 }
 
 export function useTablesQuery() {
