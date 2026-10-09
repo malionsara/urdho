@@ -2,15 +2,15 @@ import { timingSafeEqual } from 'node:crypto';
 import { Hono } from 'hono';
 import { createMiddleware } from 'hono/factory';
 import { z } from 'zod';
-import { newVenueInput } from '../../shared/schemas';
+import { newVenueInput, staffPasswordResetInput } from '../../shared/schemas';
 import { sha256 } from '../auth/crypto';
 import type { Db } from '../db/client';
 import { notFound, readJson, unauthorized } from '../http';
-import { createVenueWithOwner, pilotStats } from '../repos/operator';
+import { createVenueWithOwner, pilotStats, resetStaffPassword } from '../repos/operator';
 
 /*
  * /api/operator: the Urdho team's tools for the pilot (pnpm venue:create --live, pnpm pilot:stats
- * --live). Every request needs `Authorization: Bearer <OPERATOR_TOKEN>`. Without an OPERATOR_TOKEN
+ * --live, pnpm staff:reset-password --live). Every request needs `Authorization: Bearer <OPERATOR_TOKEN>`. Without an OPERATOR_TOKEN
  * on the server, the whole section answers 404, as if it didn't exist.
  */
 
@@ -35,6 +35,13 @@ export function operatorRoutes(db: Db, token: string | undefined) {
   routes.post('/venues', async (c) => {
     const input = await readJson(c, newVenueInput);
     return c.json(await createVenueWithOwner(db, input), 201);
+  });
+
+  routes.post('/staff/password-reset', async (c) => {
+    const { email } = await readJson(c, staffPasswordResetInput);
+    const reset = await resetStaffPassword(db, email);
+    if (!reset) throw notFound();
+    return c.json(reset);
   });
 
   routes.get('/stats', async (c) => {

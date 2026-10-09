@@ -3,8 +3,9 @@ import type { NewVenueInput } from '../../shared/schemas';
 import type { OpeningDay, PaymentMethod } from '../../shared/types';
 import { hashPassword, newQrToken, temporaryPassword } from '../auth/crypto';
 import type { Db } from '../db/client';
-import { diningTable, payment, serviceCall, staffUser, venue } from '../db/schema';
+import { diningTable, loginFailure, payment, serviceCall, staffSession, staffUser, venue } from '../db/schema';
 import { ApiError, isUniqueViolation } from '../http';
+import { findStaffByEmail } from './staff';
 
 /*
  * The Urdho team's tools for the pilot: setting up a venue and reading how venues use the app.
@@ -54,6 +55,37 @@ export async function createVenueWithOwner(db: Db, input: NewVenueInput): Promis
     if (isUniqueViolation(error)) throw new ApiError(409, 'slug_or_email_taken');
     throw error;
   }
+}
+
+export interface PasswordReset {
+  name: string;
+  email: string;
+  role: string;
+  venue: { name: string; slug: string };
+  temporaryPassword: string;
+}
+
+/**
+ * A forgotten password, owners' included: a new temporary password for the account with this
+ * email, in whichever venue. The person is signed out on every device (a lost tablet stops working),
+ * any sign-in block from their failed attempts is lifted, and they choose their own password at
+ * the next sign-in. Undefined when no account has the email.
+ */
+export async function resetStaffPassword(db: Db, email: string): Promise<PasswordReset | undefined> {
+  const account = await findStaffByEmail(db, email);
+  if (!account) return undefined;
+  const password = temporaryPassword();
+  const passwordHash = await hashPassword(password);
+  await db.transaction(async (tx) => {
+    await tx
+      .update(staffUser)
+      .set({ passwordHash, mustChangePassword: true })
+      .where(and(eq(staffUser.venueId, account.venueId), eq(staffUser.id, account.id)));
+    await tx.delete(staffSession).where(and(eq(staffSession.venueId, account.venueId), eq(staffSession.staffUserId, account.id)));
+    await tx.delete(loginFailure).where(eq(loginFailure.email, account.email.toLowerCase()));
+  });
+  const [place] = await db.select({ name: venue.name, slug: venue.slug }).from(venue).where(eq(venue.id, account.venueId));
+  return { name: account.name, email: account.email, role: account.role, venue: place!, temporaryPassword: password };
 }
 
 /* Pilot numbers ------------------------------------------------------------ */

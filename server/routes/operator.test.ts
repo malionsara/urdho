@@ -3,7 +3,7 @@ import { eq, sql } from 'drizzle-orm';
 import { describe, expect, it } from 'vitest';
 import { guestOrder } from '../db/schema';
 import { pilotStats } from '../repos/operator';
-import { makeVenueWithStaff, testApi } from '../test/api';
+import { makeVenueWithStaff, PASSWORD, testApi } from '../test/api';
 import { connectTestDb } from '../test/db';
 
 const db = connectTestDb();
@@ -71,6 +71,32 @@ describe('creating a pilot venue', () => {
     const sameEmail = await operator('POST', '/venues', newVenue({ ownerEmail: first.ownerEmail.toUpperCase() }));
     expect(await sameEmail.json()).toEqual({ error: { code: 'email_taken' } });
     expect((await operator('POST', '/venues', newVenue({ slug: 'staff' }))).status).toBe(400);
+  });
+});
+
+describe('resetting a forgotten password', () => {
+  const from = (ip: string) => ({ headers: { 'x-real-ip': ip } });
+
+  it("gives an owner a temporary password, signs them out everywhere and lifts their sign-in block", async () => {
+    const v = await makeVenueWithStaff(db, 'Reset');
+    const tablet = (await login(v.owner.email)).cookie;
+    for (let i = 0; i < 5; i++) await call('POST', '/api/staff/login', { body: { email: v.owner.email, password: 'wrong guess' }, ...from('198.51.100.7') });
+    expect((await call('POST', '/api/staff/login', { body: { email: v.owner.email, password: PASSWORD }, ...from('198.51.100.7') })).status).toBe(429);
+
+    const res = await operator('POST', '/staff/password-reset', { email: v.owner.email.toUpperCase() });
+    expect(res.status).toBe(200);
+    const reset = (await res.json()) as { email: string; role: string; venue: { slug: string }; temporaryPassword: string };
+    expect(reset).toMatchObject({ email: v.owner.email, role: 'owner', venue: { slug: v.slug } });
+
+    expect((await call('GET', '/api/staff/me', { cookie: tablet })).status).toBe(401);
+    expect((await login(v.owner.email)).status).toBe(401);
+    const signedIn = await call('POST', '/api/staff/login', { body: { email: v.owner.email, password: reset.temporaryPassword }, ...from('198.51.100.7') });
+    expect(signedIn.status).toBe(200);
+    expect(signedIn.body?.user.mustChangePassword).toBe(true);
+  });
+
+  it('answers 404 for an email no account has', async () => {
+    expect((await operator('POST', '/staff/password-reset', { email: 'nobody-here@example.test' })).status).toBe(404);
   });
 });
 

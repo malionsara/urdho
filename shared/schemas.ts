@@ -43,6 +43,9 @@ export const newVenueInput = z.object({
 
 export type NewVenueInput = z.infer<typeof newVenueInput>;
 
+/** A forgotten password (operator only: pnpm staff:reset-password). */
+export const staffPasswordResetInput = z.object({ email });
+
 const hhmm = z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/);
 
 /** Photos are stored as https URLs (Vercel Blob) or paths on our own site. */
