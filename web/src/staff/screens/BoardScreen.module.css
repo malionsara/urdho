@@ -103,6 +103,17 @@
   animation: blink 1.6s ease-in-out infinite;
 }
 
+/* No connection: the board isn't updating. */
+.live[data-lost] {
+  background: var(--danger-soft);
+  color: var(--danger);
+}
+
+.live[data-lost] .liveDot {
+  background: var(--danger);
+  animation: none;
+}
+
 @keyframes blink {
   50% {
     opacity: 0.25;

@@ -1,0 +1,451 @@
+<!doctype html>
+<html lang="sq">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Urdho · Udhëzues për stafin</title>
+<meta name="robots" content="noindex" />
+<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wdth,wght@12..96,75..100,600..800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<!--
+  Staff quick start: one A4 page in Albanian, one in English. Print with Ctrl+P (2 pages).
+  Optional address parameters print the venue and the support number on the sheet:
+    /quick-start.html?venue=Bar%20Kalaja&help=%2B355%2069%20123%204567
+  Every button name below is copied from web/src/i18n/sq.json and en.json; keep them in step.
+-->
+<style>
+  :root {
+    --ink: #17120f;
+    --ink-soft: #4a423c;
+    --muted: #776d65;
+    --line: #e6ded3;
+    --paper: #ffffff;
+    --desk: #e8e1d7;
+    --brand: #c8432a;
+    --brand-soft: #fbe9e4;
+    --saffron: #f4b63f;
+    --display: 'Bricolage Grotesque', 'Arial Narrow', system-ui, sans-serif;
+    --body: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+    color-scheme: light;
+  }
+
+  * { box-sizing: border-box; }
+
+  html { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+
+  body {
+    margin: 0;
+    background: var(--desk);
+    color: var(--ink);
+    font: 400 10.4pt/1.45 var(--body);
+  }
+
+  .toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 6px 18px;
+    padding: 14px 16px 0;
+    font-size: 13px;
+    color: var(--ink-soft);
+  }
+
+  .toolbar a { color: var(--ink); font-weight: 600; }
+
+  .page {
+    position: relative;
+    width: 210mm;
+    min-height: 297mm;
+    margin: 18px auto;
+    padding: 13mm 13mm 11mm;
+    background: var(--paper);
+    box-shadow: 0 10px 30px rgb(23 18 15 / 0.18);
+    display: flex;
+    flex-direction: column;
+    gap: 5.5mm;
+  }
+
+  /* A kilim strip across the top, as in the app. */
+  .page::before {
+    content: '';
+    position: absolute;
+    inset: 0 0 auto;
+    height: 4mm;
+    background-color: var(--brand);
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='8' viewBox='0 0 16 8'%3E%3Cpath d='M8 0l4 4-4 4-4-4z' fill='%23f4b63f'/%3E%3Cpath d='M8 2.2l1.8 1.8L8 5.8 6.2 4z' fill='%2317120f'/%3E%3C/svg%3E");
+    background-size: auto 100%;
+  }
+
+  header {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+    gap: 5mm;
+    padding-top: 2mm;
+  }
+
+  .mark { width: 15mm; height: 15mm; }
+
+  h1 {
+    margin: 0;
+    font: 800 22pt/1 var(--display);
+    font-stretch: 82%;
+    letter-spacing: -0.01em;
+    text-wrap: balance;
+  }
+
+  .tagline { margin: 1.2mm 0 0; color: var(--muted); }
+
+  .fields { display: grid; gap: 2.2mm; min-width: 62mm; }
+
+  .field { display: grid; grid-template-columns: auto 1fr; align-items: end; gap: 2mm; font-size: 8.4pt; color: var(--muted); }
+
+  .field b {
+    min-height: 5mm;
+    border-bottom: 1px dotted var(--muted);
+    color: var(--ink);
+    font: 700 10pt/1.2 var(--display);
+  }
+
+  .columns {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6mm;
+    align-items: start;
+  }
+
+  .stack { display: grid; gap: 6.5mm; }
+
+  section h2 {
+    display: flex;
+    align-items: center;
+    gap: 2mm;
+    margin: 0 0 2.2mm;
+    font: 800 14pt/1.1 var(--display);
+    font-stretch: 85%;
+  }
+
+  section h2::before {
+    content: '';
+    width: 2.6mm;
+    height: 2.6mm;
+    background: var(--saffron);
+    transform: rotate(45deg);
+    box-shadow: inset 0 0 0 0.7mm var(--brand);
+    flex: none;
+  }
+
+  p { margin: 0; }
+
+  ol, ul { margin: 0; padding: 0; list-style: none; display: grid; gap: 2.8mm; }
+
+  ol { counter-reset: step; }
+
+  ol > li { counter-increment: step; display: grid; grid-template-columns: 6mm 1fr; gap: 1.5mm; }
+
+  ol > li::before {
+    content: counter(step);
+    display: grid;
+    place-items: center;
+    width: 5.2mm;
+    height: 5.2mm;
+    border-radius: 50%;
+    background: var(--ink);
+    color: var(--paper);
+    font: 800 8pt/1 var(--display);
+    margin-top: 0.3mm;
+  }
+
+  ul > li { padding-left: 4mm; position: relative; }
+
+  ul > li::before {
+    content: '';
+    position: absolute;
+    left: 0.4mm;
+    top: 1.9mm;
+    width: 1.5mm;
+    height: 1.5mm;
+    background: var(--brand);
+    transform: rotate(45deg);
+  }
+
+  strong { font-weight: 700; }
+
+  /* The app's buttons, so staff look for the same thing on screen. */
+  .btn {
+    display: inline-block;
+    padding: 0.35mm 2.2mm 0.5mm;
+    border-radius: 99px;
+    background: var(--brand);
+    color: #fff;
+    font: 700 9.2pt/1.35 var(--display);
+    white-space: nowrap;
+  }
+
+  .btn.dark { background: var(--ink); }
+
+  .btn.quiet { background: var(--line); color: var(--ink); }
+
+  /* Board columns, in their colours on the board. */
+  .flow {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 1.6mm;
+    margin: 0 0 2.6mm;
+    padding: 2.4mm;
+    border-radius: 3mm;
+    background: #f6f1ea;
+  }
+
+  .col {
+    padding: 1mm 2.4mm;
+    border-radius: 2mm;
+    font: 800 9pt/1.2 var(--display);
+    color: #fff;
+  }
+
+  .col.new { background: var(--brand); }
+  .col.prep { background: var(--saffron); color: var(--ink); }
+  .col.served { background: var(--ink); }
+
+  .arrow { display: inline-flex; align-items: center; gap: 1mm; color: var(--muted); font-size: 8pt; }
+
+  .chimes { display: grid; grid-template-columns: auto 1fr; gap: 1mm 3mm; margin: 0 0 2.6mm; }
+
+  .notes { font: 800 10pt/1 var(--display); color: var(--brand); letter-spacing: 0.05em; }
+
+  .note { margin-top: 2.6mm; padding: 2.4mm 3mm; border-radius: 2.5mm; background: var(--brand-soft); }
+
+  .boxes { display: grid; grid-template-columns: 1fr 1fr; gap: 6mm; margin-top: auto; }
+
+  .box { padding: 3.2mm 3.6mm; border: 1px solid var(--line); border-radius: 3mm; }
+
+  .box h2 { font-size: 11pt; }
+
+  .roles { display: grid; grid-template-columns: auto 1fr; gap: 1.4mm 3mm; }
+
+  .roles dt { font: 800 9pt/1.4 var(--display); }
+
+  .roles dd { margin: 0; }
+
+  footer { display: flex; justify-content: space-between; gap: 4mm; color: var(--muted); font-size: 7.6pt; }
+
+  /* Phones: the sheet becomes a plain page to scroll and read. */
+  @media screen and (max-width: 860px) {
+    body { font-size: 15px; }
+    .page { width: auto; min-height: 0; margin: 12px 0 0; padding: 26px 16px 20px; box-shadow: none; gap: 22px; }
+    header { grid-template-columns: auto 1fr; }
+    .fields { grid-column: 1 / -1; min-width: 0; }
+    .columns, .boxes { grid-template-columns: 1fr; }
+    .btn, .col { font-size: 13px; }
+  }
+
+  @page { size: A4; margin: 0; }
+
+  @media print {
+    body { background: var(--paper); }
+    .toolbar { display: none; }
+    .page { margin: 0; box-shadow: none; height: 297mm; break-after: page; }
+    .page:last-of-type { break-after: auto; }
+  }
+</style>
+</head>
+<body>
+
+<nav class="toolbar" aria-label="Gjuha / Language">
+  <a href="#sq">Shqip</a>
+  <a href="#en">English</a>
+  <span>Printoni me Ctrl+P · Print with Ctrl+P (2 × A4)</span>
+</nav>
+
+<!-- ===================================================== Shqip -->
+<article class="page" id="sq" lang="sq">
+  <header>
+    <svg class="mark" viewBox="0 0 64 64" aria-hidden="true"><rect width="64" height="64" rx="16" fill="#C8432A"/><path d="M18 22v12a14 14 0 0 0 28 0V22" fill="none" stroke="#fff" stroke-width="6" stroke-linecap="round"/></svg>
+    <div>
+      <h1>Udhëzues i shpejtë për stafin</h1>
+      <p class="tagline">Urdho · Porositë e tavolinave, drejt e në ekranin tuaj.</p>
+    </div>
+    <div class="fields">
+      <div class="field">Lokali <b data-fill="venue"></b></div>
+      <div class="field">Ndihmë (WhatsApp) <b data-fill="help"></b></div>
+    </div>
+  </header>
+
+  <div class="columns">
+    <div class="stack">
+      <section>
+        <h2>Para shërbimit</h2>
+        <ol>
+          <li><p>Në tabletë hapni <strong><span data-host>urdho.vercel.app</span>/staff</strong>, ose ikonën Urdho në ekranin kryesor. Hyni me email-in dhe fjalëkalimin tuaj; herën e parë zgjidhni fjalëkalimin tuaj.</p></li>
+          <li><p>Shtypni <span class="btn">Fillo shërbimin</span>. Zilja ndizet dhe ekrani nuk fiket gjatë turnit. Nëse e rihapni faqen, shtypeni sërish.</p></li>
+          <li><p>Ngrini zërin e tabletës dhe mbajeni në karikim.</p></li>
+        </ol>
+      </section>
+
+      <section>
+        <h2>Gjatë shërbimit</h2>
+        <div class="flow" aria-label="Rruga e një porosie">
+          <span class="col new">Të reja</span>
+          <span class="arrow">→ <span class="btn">Fillo përgatitjen</span> →</span>
+          <span class="col prep">Në përgatitje</span>
+          <span class="arrow">→ <span class="btn dark">Shëno të shërbyer</span> →</span>
+          <span class="col served">Të shërbyera</span>
+        </div>
+        <div class="chimes">
+          <span class="notes">♪ ♪</span><span>Dy nota që ngjiten: porosi e re.</span>
+          <span class="notes">♪♪♪</span><span>Tre nota të shpejta: klienti thërret kamarierin.</span>
+        </div>
+        <ul>
+          <li><p><strong>Tavolinë e re.</strong> Kështu shënohet porosia e parë e një tavoline. Kontrolloni që klientët janë ulur para se të fillojë kuzhina; nëse s'ka njeri, shtypni <span class="btn quiet">Anulo</span>.</p></li>
+          <li><p><strong>Thirrje për kamarierin</strong> del me të verdhë lart, me numrin e tavolinës. Shkoni dhe shtypni <span class="btn dark">Po vij</span>.</p></li>
+          <li><p><strong>Mbaroi një pjatë?</strong> Te <strong>Menuja</strong> fikni <span class="btn quiet">Në dispozicion</span> te pjata. Klientët e shohin “Mbaroi” brenda një minute.</p></li>
+        </ul>
+      </section>
+    </div>
+
+    <div class="stack">
+      <section>
+        <h2>Pagesa</h2>
+        <ol>
+          <li><p>Hapni <strong>Tavolinat</strong> dhe prekni tavolinën: shihni çfarë është porositur dhe faturën.</p></li>
+          <li><p>Shtypni <span class="btn dark">Paguar me para në dorë</span> ose <span class="btn dark">Paguar me kartë</span>, pastaj <span class="btn">Mbyll tavolinën</span>. Telefonat e klientëve shfaqin “Tavolina u mbyll”; klientët e ardhshëm nisin nga e para.</p></li>
+          <li><p>Kuponin tatimor vazhdoni ta lëshoni nga arka juaj, si zakonisht.</p></li>
+        </ol>
+        <p class="note">Tavolinë pa asgjë për të paguar, si një thirrje pa porosi ose një porosi e anuluar: <span class="btn quiet">Pastro tavolinën</span>.</p>
+      </section>
+
+      <section>
+        <h2>Kur diçka nuk shkon</h2>
+        <ul>
+          <li><p><strong>Pa internet.</strong> Shenja <strong>Live</strong> lart bëhet e kuqe: “Pa lidhje”. Porositë e reja nuk mbërrijnë dhe klientët nuk mund të porosisin. Merrni porositë me dorë derisa të kthehet lidhja.</p></li>
+          <li><p><strong>Nuk bie zilja.</strong> Shtypni sërish <span class="btn">Fillo shërbimin</span>, shikoni që butoni <strong>Zilja</strong> nuk tregon “Pa zë” dhe ngrini zërin e tabletës.</p></li>
+          <li><p><strong>Porosi nga dikush që s'është në lokal</strong>, p.sh. me një kartë të fotografuar: te <strong>Kodet QR</strong> shtypni <span class="btn quiet">Rivendos kodin</span> për atë tavolinë, printoni kartën e re dhe zëvendësojeni.</p></li>
+          <li><p><strong>Një kamarier harroi fjalëkalimin.</strong> Pronari te <strong>Stafi</strong> e heq llogarinë dhe shtyp <span class="btn">Shto llogari</span>; del një fjalëkalim i përkohshëm.</p></li>
+          <li><p><strong>Diçka tjetër:</strong> na shkruani në WhatsApp, te numri lart.</p></li>
+        </ul>
+      </section>
+    </div>
+  </div>
+
+  <div class="boxes">
+    <section class="box">
+      <h2>Kush sheh çfarë</h2>
+      <dl class="roles">
+        <dt>Pronar</dt><dd>Gjithçka, përfshirë stafin dhe cilësimet.</dd>
+        <dt>Menaxher</dt><dd>Porositë, tavolinat, menuja dhe kodet QR.</dd>
+        <dt>Kamarier</dt><dd>Porositë dhe tavolinat.</dd>
+      </dl>
+    </section>
+    <section class="box">
+      <h2>Çfarë sheh klienti</h2>
+      <p>Skanon kartën në tavolinë, zgjedh pjatat dhe dërgon porosinë, pa shkarkuar asgjë. Nga telefoni mund të shtypë “Thirr kamarierin”. Paguan në fund te ju, me para në dorë ose me kartë.</p>
+    </section>
+  </div>
+
+  <footer><span>Urdho · Udhëzues për stafin</span><span>English on the next page</span></footer>
+</article>
+
+<!-- ===================================================== English -->
+<article class="page" id="en" lang="en">
+  <header>
+    <svg class="mark" viewBox="0 0 64 64" aria-hidden="true"><rect width="64" height="64" rx="16" fill="#C8432A"/><path d="M18 22v12a14 14 0 0 0 28 0V22" fill="none" stroke="#fff" stroke-width="6" stroke-linecap="round"/></svg>
+    <div>
+      <h1>Staff quick start</h1>
+      <p class="tagline">Urdho · Table orders, straight to your screen.</p>
+    </div>
+    <div class="fields">
+      <div class="field">Venue <b data-fill="venue"></b></div>
+      <div class="field">Help (WhatsApp) <b data-fill="help"></b></div>
+    </div>
+  </header>
+
+  <div class="columns">
+    <div class="stack">
+      <section>
+        <h2>Before service</h2>
+        <ol>
+          <li><p>On the tablet, open <strong><span data-host>urdho.vercel.app</span>/staff</strong>, or the Urdho icon on the home screen. Sign in with your email and password; the first time, you choose your own password.</p></li>
+          <li><p>Tap <span class="btn">Start service</span>. The chime turns on and the screen stays awake for the shift. If you reload the page, tap it again.</p></li>
+          <li><p>Turn the tablet's volume up and keep it charging.</p></li>
+        </ol>
+      </section>
+
+      <section>
+        <h2>During service</h2>
+        <div class="flow" aria-label="How an order moves">
+          <span class="col new">New</span>
+          <span class="arrow">→ <span class="btn">Start preparing</span> →</span>
+          <span class="col prep">Preparing</span>
+          <span class="arrow">→ <span class="btn dark">Mark served</span> →</span>
+          <span class="col served">Served</span>
+        </div>
+        <div class="chimes">
+          <span class="notes">♪ ♪</span><span>Two rising notes: a new order.</span>
+          <span class="notes">♪♪♪</span><span>Three quick notes: a guest is calling a waiter.</span>
+        </div>
+        <ul>
+          <li><p><strong>New table.</strong> This marks a table's first order. Check the guests are seated before the kitchen starts; if nobody is there, tap <span class="btn quiet">Cancel</span>.</p></li>
+          <li><p><strong>Waiter calls</strong> show in yellow at the top, with the table number. Go over and tap <span class="btn dark">On my way</span>.</p></li>
+          <li><p><strong>Run out of a dish?</strong> In <strong>Menu</strong>, switch off <span class="btn quiet">Available</span> on the dish. Guests see “Sold out” within a minute.</p></li>
+        </ul>
+      </section>
+    </div>
+
+    <div class="stack">
+      <section>
+        <h2>Payment</h2>
+        <ol>
+          <li><p>Open <strong>Tables</strong> and tap the table: you see what was ordered and the bill.</p></li>
+          <li><p>Tap <span class="btn dark">Paid in cash</span> or <span class="btn dark">Paid by card</span>, then <span class="btn">Close table</span>. The guests' phones show “Table closed”; the next guests start fresh.</p></li>
+          <li><p>Keep issuing the fiscal receipt from your till, as usual.</p></li>
+        </ol>
+        <p class="note">A table with nothing to pay, like a call without an order or a cancelled order: <span class="btn quiet">Clear table</span>.</p>
+      </section>
+
+      <section>
+        <h2>When something goes wrong</h2>
+        <ul>
+          <li><p><strong>No internet.</strong> The <strong>Live</strong> badge at the top turns red: “No connection”. New orders can't arrive and guests can't order. Take orders by hand until it's back.</p></li>
+          <li><p><strong>No chime.</strong> Tap <span class="btn">Start service</span> again, check the <strong>Sound</strong> button doesn't say “Muted”, and turn the tablet's volume up.</p></li>
+          <li><p><strong>Orders from someone who isn't there</strong>, for example from a photographed card: in <strong>QR codes</strong>, tap <span class="btn quiet">Reset code</span> for that table, print the new card and swap it in.</p></li>
+          <li><p><strong>A waiter forgot their password.</strong> The owner removes the account in <strong>Staff</strong> and taps <span class="btn">Add account</span>; a temporary password appears.</p></li>
+          <li><p><strong>Anything else:</strong> message us on WhatsApp, at the number above.</p></li>
+        </ul>
+      </section>
+    </div>
+  </div>
+
+  <div class="boxes">
+    <section class="box">
+      <h2>Who sees what</h2>
+      <dl class="roles">
+        <dt>Owner</dt><dd>Everything, including staff and settings.</dd>
+        <dt>Manager</dt><dd>Orders, tables, menu and QR codes.</dd>
+        <dt>Waiter</dt><dd>Orders and tables.</dd>
+      </dl>
+    </section>
+    <section class="box">
+      <h2>What guests see</h2>
+      <p>They scan the card on the table, choose their dishes and send the order, with nothing to download. They can tap “Call the waiter” on their phone. They pay you at the end, in cash or by card.</p>
+    </section>
+  </div>
+
+  <footer><span>Urdho · Staff quick start</span><span>Shqip në faqen e parë</span></footer>
+</article>
+
+<script>
+  // The site's own address (it changes with the domain), and the venue and support number when given.
+  document.querySelectorAll('[data-host]').forEach((el) => (el.textContent = location.host || el.textContent));
+  const params = new URLSearchParams(location.search);
+  for (const key of ['venue', 'help']) {
+    const value = (params.get(key) || '').trim().slice(0, 60);
+    if (value) document.querySelectorAll(`[data-fill="${key}"]`).forEach((el) => (el.textContent = value));
+  }
+</script>
+</body>
+</html>

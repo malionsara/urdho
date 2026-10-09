@@ -78,6 +78,8 @@ URDHO_OPERATOR_TOKEN=<the same value as OPERATOR_TOKEN on the Vercel project>
 - A new pilot venue: `pnpm venue:create --live --name "Bar Kalaja" --slug bar-kalaja --owner-name "Full Name" --owner-email owner@example.com --tables 10`. It prints the owner's temporary password once (they choose their own at first sign-in) and the sign-in and table addresses. The owner then sets the menu, photos and opening hours, and prints the table cards under QR codes. Print them from the final domain: each code contains the address it was printed from.
 - How the pilot is going: `pnpm pilot:stats --live` (last 14 days; `--days 30` for more). Per venue: orders and their value, tables served and orders per table, waiter calls, bills paid in cash and by card (the card share matters for the bank talks), and on how many open days guests ordered, which is the Phase 2 gate. Late-night orders count towards the evening they belong to (service days end at 04:00).
 
+Each venue gets the staff quick-start sheet, one A4 page in Albanian and one in English, at `/quick-start.html` on the live site (`web/public/quick-start.html`). `venue:create` prints the venue's link; add `&help=<your WhatsApp number>` to print the support number on it, then print with Ctrl+P, or send the link to staff. Its button names are copied from the language files, so update it when those change.
+
 To revoke the key, change `OPERATOR_TOKEN` on Vercel and redeploy; put the new value in `.env.operator`. Without `--live`, both commands work on the database in `.env`.
 
 ## API
@@ -165,7 +167,7 @@ The schema in `server/db/schema.ts` follows the data model in the spec; migratio
 
 ## Live updates and weak signal
 
-Short polling, no sockets: the board and the tables screen ask every 3 seconds, a guest's order status every 5 seconds until it is served, and an open menu every minute (so sold-out dishes grey out). Polling pauses while a tab is hidden or a phone is locked and catches up as soon as it is visible again.
+Short polling, no sockets: the board and the tables screen ask every 3 seconds (the board's Live badge turns into a red "No connection" while it can't reach the server), a guest's order status every 5 seconds until it is served, and an open menu every minute (so sold-out dishes grey out). Polling pauses while a tab is hidden or a phone is locked and catches up as soon as it is visible again.
 
 The phone keeps the last menu it loaded. Without a connection the guest still sees it, with a "no internet" banner, and ordering waits for the connection. An order that was sent but got no answer is retried with the same `clientRef`, so the kitchen never gets it twice. A dish that sold out in the meantime is taken out of the basket by name, and after payment the status page says the table is closed.
 

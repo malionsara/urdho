@@ -54,6 +54,8 @@ function Board() {
   const ack = useStaffMutation(acknowledgeCall);
   const elapsed = useElapsed();
 
+  // The board stops updating when the connection drops; say so, or staff wait for orders that can't arrive.
+  const connectionLost = board.isError || board.fetchStatus === 'paused';
   const orders = board.data?.orders ?? [];
   const calls = board.data?.calls ?? [];
   const byColumn = (column: Column) =>
@@ -67,9 +69,9 @@ function Board() {
           title={t('staff.board.title')}
           meta={
             <>
-              <span className={styles.live}>
+              <span className={styles.live} data-lost={connectionLost || undefined} role="status">
                 <span className={styles.liveDot} />
-                {t('staff.board.live')}
+                {connectionLost ? t('staff.board.connectionLost') : t('staff.board.live')}
               </span>
               <span className={styles.clock}>{clockTime(nowMs, i18n.language)}</span>
             </>

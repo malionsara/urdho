@@ -253,6 +253,7 @@
     "board": {
       "title": "Orders",
       "live": "Live",
+      "connectionLost": "No connection",
       "calls": "Waiter calls",
       "callTitle": "Table {{number}} is calling the waiter",
       "callAck": "On my way",

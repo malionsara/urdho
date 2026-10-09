@@ -253,6 +253,7 @@
     "board": {
       "title": "Porositë",
       "live": "Live",
+      "connectionLost": "Pa lidhje",
       "calls": "Thirrje për kamarierin",
       "callTitle": "Tavolina {{number}} thërret kamarierin",
       "callAck": "Po vij",

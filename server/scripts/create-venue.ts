@@ -70,6 +70,7 @@ try {
   console.log(`Temporary password: ${owner.temporaryPassword}`);
   console.log(`Sign-in:            ${site}/staff`);
   console.log(`Table 1 address:    ${site}/${venue.slug}/t/${tables[0]!.qrToken}`);
+  console.log(`Staff sheet:        ${site}/quick-start.html?venue=${encodeURIComponent(venue.name)}  (add &help=your-number to print it)`);
   console.log('\nGive the password to the owner; it is not shown again. They choose their own at first sign-in,');
   console.log('then set the menu, photos and opening hours, and print the table cards under QR codes.\n');
 } catch (error) {

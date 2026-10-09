@@ -37,9 +37,10 @@ export default defineConfig(({ command }) => {
           // only. The staff dashboard stays out, so guests' phones never download it; staff devices
           // cache it the first time it loads (below).
           globPatterns: ['**/*.{js,css,html,svg,woff2}'],
-          globIgnores: ['**/*{cyrillic,greek,vietnamese}*', '**/StaffApp-*'],
+          globIgnores: ['**/*{cyrillic,greek,vietnamese}*', '**/StaffApp-*', '**/quick-start.html'],
           navigateFallback: '/index.html',
-          navigateFallbackDenylist: [/^\/api(\/|$)/],
+          // The API, and the printable staff sheet, which is a page of its own and not part of the app.
+          navigateFallbackDenylist: [/^\/api(\/|$)/, /^\/quick-start/],
           cleanupOutdatedCaches: true,
           runtimeCaching: [
             {
