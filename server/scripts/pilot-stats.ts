@@ -57,5 +57,8 @@ function print(v: VenueStats) {
 }
 
 const stats = await load();
-console.log(`\nPilot numbers${values.live ? ' (live)' : ' (local database)'}, last ${stats.days} service days, ${stats.venues.length} venues\n`);
+const plural = (count: number, word: string) => `${count} ${word}${count === 1 ? '' : 's'}`;
+console.log(
+  `\nPilot numbers${values.live ? ' (live)' : ' (local database)'}, last ${plural(stats.days, 'service day')}, ${plural(stats.venues.length, 'venue')}\n`,
+);
 for (const v of stats.venues) print(v);
