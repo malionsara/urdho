@@ -157,7 +157,11 @@
       "not_an_image": "That file isn't a photo.",
       "missing_file": "Choose a photo.",
       "invalid_kind": "Unknown kind of photo."
-    }
+    },
+    "updating": "Opening the latest version of Urdho…",
+    "crashTitle": "Something went wrong.",
+    "crashBody": "Reload the page. If it happens again, let us know.",
+    "reload": "Reload the page"
   },
   "dev": {
     "title": "Design review",

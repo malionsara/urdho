@@ -33,6 +33,10 @@ export default defineConfig(({ command }) => {
         // of service would silence the order chime until someone taps "start service" again.
         registerType: 'autoUpdate',
         workbox: {
+          // A new version takes over as soon as it has installed, open pages included. Without
+          // these it waits until every tab of the app is closed, which on a staff tablet is never.
+          skipWaiting: true,
+          clientsClaim: true,
           // The guest app shell, for fast repeat visits on a weak connection. Fonts: Latin subsets
           // only. The staff dashboard stays out, so guests' phones never download it; staff devices
           // cache it the first time it loads (below).

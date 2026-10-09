@@ -157,7 +157,11 @@
       "not_an_image": "Ky skedar nuk është foto.",
       "missing_file": "Zgjidhni një foto.",
       "invalid_kind": "Lloj i panjohur fotoje."
-    }
+    },
+    "updating": "Po hapet versioni i ri i Urdho…",
+    "crashTitle": "Diçka nuk shkoi mirë.",
+    "crashBody": "Rifreskoni faqen. Nëse ndodh sërish, na shkruani.",
+    "reload": "Rifresko faqen"
   },
   "dev": {
     "title": "Rishikimi i dizajnit",

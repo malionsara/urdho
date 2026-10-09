@@ -1,4 +1,5 @@
 import { createBrowserRouter, Outlet, ScrollRestoration } from 'react-router';
+import { AppError } from './AppError';
 import { GuestLayout } from './guest/GuestLayout';
 import { Home } from './Home';
 import { useNavMotion } from './lib/motion';
@@ -22,6 +23,7 @@ function Root() {
 export const router = createBrowserRouter([
   {
     element: <Root />,
+    errorElement: <AppError />,
     children: [
       // The design-review hub (with its "fill the board" tool) exists only on the dev server; the
       // production build doesn't even contain it.
