@@ -6,11 +6,11 @@ import { newVenueInput, staffPasswordResetInput } from '../../shared/schemas';
 import { sha256 } from '../auth/crypto';
 import type { Db } from '../db/client';
 import { notFound, readJson, unauthorized } from '../http';
-import { createVenueWithOwner, pilotStats, resetStaffPassword } from '../repos/operator';
+import { createVenueWithOwner, pilotStats, prepareHealthCheck, resetStaffPassword } from '../repos/operator';
 
 /*
  * /api/operator: the Urdho team's tools for the pilot (pnpm venue:create --live, pnpm pilot:stats
- * --live, pnpm staff:reset-password --live). Every request needs `Authorization: Bearer <OPERATOR_TOKEN>`. Without an OPERATOR_TOKEN
+ * --live, pnpm staff:reset-password --live, pnpm smoke --live). Every request needs `Authorization: Bearer <OPERATOR_TOKEN>`. Without an OPERATOR_TOKEN
  * on the server, the whole section answers 404, as if it didn't exist.
  */
 
@@ -43,6 +43,9 @@ export function operatorRoutes(db: Db, token: string | undefined) {
     if (!reset) throw notFound();
     return c.json(reset);
   });
+
+  // The health check's venue, and a fresh password for its waiter account.
+  routes.post('/health-check', async (c) => c.json(await prepareHealthCheck(db)));
 
   routes.get('/stats', async (c) => {
     const days = z.coerce.number().int().min(1).max(90).catch(14).parse(c.req.query('days'));

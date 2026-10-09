@@ -44,6 +44,7 @@ Open http://localhost:5173 for the design-review page, which links to every scre
 | `pnpm venue:create` | Create a pilot venue, its tables and its owner; prints the owner's temporary password once. `--live` creates it on the live site |
 | `pnpm staff:reset-password` | A forgotten password, owners' included: `--email person@example.com`. Prints a temporary password once, signs the person out everywhere. `--live` |
 | `pnpm pilot:stats` | Pilot numbers per venue: orders, value, tables served, waiter calls, cash and card, days with orders. `--days 30`, `--live` |
+| `pnpm smoke` | Health check: one table from scan to paid through the API, in its own hidden venue; says OK or which step broke. `--live` checks the live site |
 
 ## Deploy
 
@@ -78,11 +79,12 @@ URDHO_OPERATOR_TOKEN=<the same value as OPERATOR_TOKEN on the Vercel project>
 
 - A new pilot venue: `pnpm venue:create --live --name "Bar Kalaja" --slug bar-kalaja --owner-name "Full Name" --owner-email owner@example.com --tables 10`. It prints the owner's temporary password once (they choose their own at first sign-in) and the sign-in and table addresses. The owner then sets the menu, photos and opening hours, and prints the table cards under QR codes. Print them from the final domain: each code contains the address it was printed from.
 - A forgotten password: `pnpm staff:reset-password --live --email arta@example.com`. Works for any account, owners included (owners can already reset their own staff by removing and re-adding the account). It prints a temporary password once, to tell the person in person or by phone; they are signed out on every device, any sign-in block from wrong guesses is lifted, and they choose their own password at the next sign-in.
+- Is the live site working: `pnpm smoke --live`, after every deploy and before service. In a few seconds it loads the page, the app and the offline worker, then takes one table through the evening the way the phones and the dashboard do: a guest scans and orders, the phone shows the right price, the order and a waiter call reach the board, the kitchen serves it, the waiter answers the call, takes cash and the table closes. It prints each step with its time and ends with OK, or FAILED with the step that broke and what the server answered (exit code 1). It orders from its own venue, `urdho-check` (one table, a 500-lekë coffee in two sizes, a waiter account whose password changes every run), created on the first run: never from a restaurant's, and it's left out of the pilot numbers.
 - How the pilot is going: `pnpm pilot:stats --live` (last 14 days; `--days 30` for more). Per venue: orders and their value, tables served and orders per table, waiter calls, bills paid in cash and by card (the card share matters for the bank talks), and on how many open days guests ordered, which is the Phase 2 gate. Late-night orders count towards the evening they belong to (service days end at 04:00).
 
 Each venue gets the staff quick-start sheet, one A4 page in Albanian and one in English, at `/quick-start.html` on the live site (`web/public/quick-start.html`). `venue:create` prints the venue's link; add `&help=<your WhatsApp number>` to print the support number on it, then print with Ctrl+P, or send the link to staff. Its button names are copied from the language files, so update it when those change.
 
-To revoke the key, change `OPERATOR_TOKEN` on Vercel and redeploy; put the new value in `.env.operator`. Without `--live`, both commands work on the database in `.env`.
+To revoke the key, change `OPERATOR_TOKEN` on Vercel and redeploy; put the new value in `.env.operator`. Without `--live`, these commands work on the database in `.env` (`pnpm smoke` runs the API inside the command, so no server is needed).
 
 ## API
 
@@ -133,7 +135,8 @@ The team's tools, with `Authorization: Bearer <OPERATOR_TOKEN>` (see [Team comma
 | --- | --- |
 | `POST /api/operator/venues` | `{ name, slug, ownerName, ownerEmail, tables }`: a venue, its tables and its owner with a temporary password |
 | `POST /api/operator/staff/password-reset` | `{ email }`: a new temporary password for that account, in any venue; 404 if no account has it |
-| `GET /api/operator/stats?days=14` | Pilot numbers for every venue |
+| `GET /api/operator/stats?days=14` | Pilot numbers for every venue (not the health check's) |
+| `POST /api/operator/health-check` | The health check's venue (created on first use): its address, table code, and its waiter's email with a new password |
 
 Everyone who scans a table shares one session until staff take payment or close it. The guest cookie is limited to that table's address, so a phone that scanned two tables can't order to the wrong one. Orders are refused outside the venue's opening hours (its own time zone; a venue with no hours set is always open), when a dish has sold out since the guest opened it (`menu_changed`), when option rules are broken, and after 10 orders from one table in 10 minutes. An empty session closes itself after two hours.
 

@@ -25,8 +25,11 @@ export const newStaffInput = z.object({
   role: z.enum(STAFF_ROLES),
 });
 
+/** The venue the health check (`pnpm smoke`) orders from; no real venue may take its address. */
+export const HEALTH_CHECK_SLUG = 'urdho-check';
+
 /** Addresses the app itself uses at the top level, so a venue can't be called them. */
-export const RESERVED_SLUGS = ['api', 'assets', 'demo', 'icons', 'staff', 'uploads'];
+export const RESERVED_SLUGS = ['api', 'assets', 'demo', 'icons', 'staff', 'uploads', HEALTH_CHECK_SLUG];
 
 /** A new pilot venue with its owner (operator only: pnpm venue:create). */
 export const newVenueInput = z.object({

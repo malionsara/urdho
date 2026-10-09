@@ -28,7 +28,8 @@
     "db:studio": "drizzle-kit studio",
     "venue:create": "tsx server/scripts/create-venue.ts",
     "pilot:stats": "tsx server/scripts/pilot-stats.ts",
-    "staff:reset-password": "tsx server/scripts/reset-password.ts"
+    "staff:reset-password": "tsx server/scripts/reset-password.ts",
+    "smoke": "tsx server/scripts/smoke.ts"
   },
   "dependencies": {
     "@fontsource-variable/bricolage-grotesque": "^5.3.0",

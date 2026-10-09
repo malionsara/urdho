@@ -1,9 +1,22 @@
-import { and, asc, eq, gte, sql } from 'drizzle-orm';
-import type { NewVenueInput } from '../../shared/schemas';
+import { and, asc, eq, gte, ne, sql } from 'drizzle-orm';
+import { HEALTH_CHECK_SLUG, type NewVenueInput } from '../../shared/schemas';
 import type { OpeningDay, PaymentMethod } from '../../shared/types';
-import { hashPassword, newQrToken, temporaryPassword } from '../auth/crypto';
+import { hashPassword, newQrToken, newSessionToken, temporaryPassword } from '../auth/crypto';
 import type { Db } from '../db/client';
-import { diningTable, loginFailure, payment, serviceCall, staffSession, staffUser, venue } from '../db/schema';
+import {
+  diningTable,
+  loginFailure,
+  menuCategory,
+  menuItem,
+  menuOption,
+  optionGroup,
+  payment,
+  serviceCall,
+  staffSession,
+  staffUser,
+  translation,
+  venue,
+} from '../db/schema';
 import { ApiError, isUniqueViolation } from '../http';
 import { findStaffByEmail } from './staff';
 
@@ -88,6 +101,99 @@ export async function resetStaffPassword(db: Db, email: string): Promise<Passwor
   return { name: account.name, email: account.email, role: account.role, venue: place!, temporaryPassword: password };
 }
 
+/* Health check ------------------------------------------------------------- */
+
+const HEALTH_CHECK_EMAIL = 'health-check@urdho.al';
+
+type Tx = Parameters<Parameters<Db['transaction']>[0]>[0];
+
+export interface HealthCheckVenue {
+  slug: string;
+  qrToken: string;
+  email: string;
+  password: string;
+}
+
+/**
+ * The venue the health check (`pnpm smoke`) orders from, so a check never shows up on a
+ * restaurant's board or in the pilot numbers: one table, one dish with a required choice, and a
+ * waiter account. Created on first use. Each run gets a new password for the waiter, and earlier
+ * runs' sign-ins end, so the password a run prints is useless afterwards.
+ */
+export async function prepareHealthCheck(db: Db): Promise<HealthCheckVenue> {
+  const password = newSessionToken();
+  const passwordHash = await hashPassword(password);
+  for (let attempt = 0; ; attempt++) {
+    try {
+      return await db.transaction(async (tx) => {
+        const [existing] = await tx.select({ id: venue.id }).from(venue).where(eq(venue.slug, HEALTH_CHECK_SLUG));
+        const venueId = existing?.id ?? (await createHealthCheckVenue(tx));
+
+        const [account] = await tx
+          .select({ id: staffUser.id, venueId: staffUser.venueId })
+          .from(staffUser)
+          .where(sql`lower(${staffUser.email}) = ${HEALTH_CHECK_EMAIL}`);
+        // The address and the email are reserved for the check; anything else on them isn't ours to touch.
+        if (account && account.venueId !== venueId) throw new ApiError(409, 'email_taken');
+        if (existing && !account) throw new ApiError(409, 'slug_taken');
+        if (account) {
+          await tx
+            .update(staffUser)
+            .set({ passwordHash, mustChangePassword: false })
+            .where(and(eq(staffUser.venueId, venueId), eq(staffUser.id, account.id)));
+          await tx.delete(staffSession).where(and(eq(staffSession.venueId, venueId), eq(staffSession.staffUserId, account.id)));
+        } else {
+          await tx.insert(staffUser).values({ venueId, name: 'Health check', email: HEALTH_CHECK_EMAIL, role: 'waiter', passwordHash, mustChangePassword: false });
+        }
+
+        const [table] = await tx
+          .select({ qrToken: diningTable.qrToken })
+          .from(diningTable)
+          .where(eq(diningTable.venueId, venueId))
+          .orderBy(asc(diningTable.number))
+          .limit(1);
+        if (!table) throw new ApiError(409, 'no_table');
+        return { slug: HEALTH_CHECK_SLUG, qrToken: table.qrToken, email: HEALTH_CHECK_EMAIL, password };
+      });
+    } catch (error) {
+      // Two checks started at the same moment and both created the venue: this one uses the other's.
+      if (attempt === 0 && isUniqueViolation(error)) continue;
+      throw error;
+    }
+  }
+}
+
+/** Always open (no hours set), one table, and a 500-lekë coffee in two sizes: small, or large for 100 more. */
+async function createHealthCheckVenue(tx: Tx): Promise<string> {
+  const [created] = await tx.insert(venue).values({ name: 'Urdho health check', slug: HEALTH_CHECK_SLUG, openingHours: [] }).returning({ id: venue.id });
+  const venueId = created!.id;
+  await tx.insert(diningTable).values({ venueId, number: 1, qrToken: newQrToken() });
+  const [category] = await tx.insert(menuCategory).values({ venueId }).returning({ id: menuCategory.id });
+  const [item] = await tx.insert(menuItem).values({ venueId, categoryId: category!.id, priceLek: 500 }).returning({ id: menuItem.id });
+  const [group] = await tx.insert(optionGroup).values({ venueId, itemId: item!.id, minSelect: 1, maxSelect: 1 }).returning({ id: optionGroup.id });
+  const [small, large] = await tx
+    .insert(menuOption)
+    .values([
+      { venueId, groupId: group!.id, priceDeltaLek: 0, sortOrder: 0 },
+      { venueId, groupId: group!.id, priceDeltaLek: 100, sortOrder: 1 },
+    ])
+    .returning({ id: menuOption.id });
+  const names = [
+    { entityType: 'menu_category', entityId: category!.id, sq: 'Kontroll', en: 'Check' },
+    { entityType: 'menu_item', entityId: item!.id, sq: 'Kafe kontrolli', en: 'Check coffee' },
+    { entityType: 'option_group', entityId: group!.id, sq: 'Madhësia', en: 'Size' },
+    { entityType: 'menu_option', entityId: small!.id, sq: 'E vogël', en: 'Small' },
+    { entityType: 'menu_option', entityId: large!.id, sq: 'E madhe', en: 'Large' },
+  ] as const;
+  await tx.insert(translation).values(
+    names.flatMap(({ entityType, entityId, sq, en }) => [
+      { venueId, entityType, entityId, field: 'name' as const, lang: 'sq' as const, text: sq },
+      { venueId, entityType, entityId, field: 'name' as const, lang: 'en' as const, text: en },
+    ]),
+  );
+  return venueId;
+}
+
 /* Pilot numbers ------------------------------------------------------------ */
 
 /**
@@ -145,7 +251,7 @@ function openOn(date: string, hours: OpeningDay[]): boolean {
   return hours.some((h) => h.day === weekday(date) && h.open);
 }
 
-/** How every venue used the app over the last `days` service days. */
+/** How every venue used the app over the last `days` service days. The health check's venue isn't one. */
 export async function pilotStats(db: Db, days: number, now = new Date()): Promise<PilotStats> {
   // A day more than asked for, so the earliest service day is complete in every time zone.
   const since = new Date(now.getTime() - (days + 1) * 86_400_000);
@@ -153,6 +259,7 @@ export async function pilotStats(db: Db, days: number, now = new Date()): Promis
   const venues = await db
     .select({ id: venue.id, name: venue.name, slug: venue.slug, timezone: venue.timezone, openingHours: venue.openingHours, createdAt: venue.createdAt })
     .from(venue)
+    .where(ne(venue.slug, HEALTH_CHECK_SLUG))
     .orderBy(asc(venue.createdAt));
 
   // One row per order with its value: line price plus option surcharges, times quantity.
