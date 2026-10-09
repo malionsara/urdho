@@ -6,7 +6,7 @@ QR ordering for Albanian restaurants: guests scan a code at the table, order fro
 
 All 9 milestones of the MVP plan: the design system, the guest app, the staff dashboard, the PostgreSQL database, the API (staff sign-in, roles and tenancy, menu management with photo uploads, ordering from scan to payment), the screens wired to it with polling, an offline menu and an installable dashboard, and the deploy.
 
-Live at **https://urdho.vercel.app** (Vercel, with Neon PostgreSQL and Vercel Blob in Frankfurt).
+Live at **https://urdho.al** (Vercel, with Neon PostgreSQL and Vercel Blob in Frankfurt). `www.urdho.al` redirects there; `urdho.vercel.app` still works.
 
 An order placed on a phone appears on the board within seconds; status changes on the board, sold-out switches and payment reach the phone the same way.
 
@@ -47,7 +47,7 @@ Open http://localhost:5173 for the design-review page, which links to every scre
 
 ## Deploy
 
-The private GitHub repo `malionsara/urdho` is linked to the Vercel project `urdho` (team MNP Team): every push to `main` deploys to https://urdho.vercel.app, and the previous version keeps serving until the new one is ready. A build runs `pnpm deploy:build`:
+The private GitHub repo `malionsara/urdho` is linked to the Vercel project `urdho` (team MNP Team): every push to `main` deploys to https://urdho.al, and the previous version keeps serving until the new one is ready. A build runs `pnpm deploy:build`:
 
 1. `pnpm build`: the web app into `dist/`, and the API into one file, `server/dist/vercel.js`, which `api/index.js` hands to Vercel.
 2. `pnpm db:migrate`: new migrations on Neon. A failing migration fails the deploy, so the live site never runs code against a schema it doesn't expect.
@@ -72,7 +72,7 @@ Sensitive values can't be read back, not even by the project's owners. Previews 
 The pilot is run from the command line, with `--live`. Those commands call `/api/operator` on the live site with the key in `.env.operator` (git-ignored, on the machine that set up the deploy), so no database password ever leaves Vercel:
 
 ```
-URDHO_URL=https://urdho.vercel.app
+URDHO_URL=https://urdho.al
 URDHO_OPERATOR_TOKEN=<the same value as OPERATOR_TOKEN on the Vercel project>
 ```
 
@@ -166,7 +166,7 @@ The schema in `server/db/schema.ts` follows the data model in the spec; migratio
 
 - Review switches, remembered for the browser tab: `?brand=1F5E45` previews another brand colour (`?brand=reset` clears it), `?slow=1` slows every API call to show loading states (`?slow=0` clears it).
 - To start over with a clean demo venue: `pnpm db:reset`.
-- On https://urdho.vercel.app the demo venue exists too, open 08:00–23:00 Tirana time. Its three accounts start with the password in `.env.vercel-demo` (git-ignored, on the machine that set up the deploy) and must each replace it at first sign-in. Its tables don't use the public `demo-1` … `demo-6` codes: off this machine the seed gives them random ones, and every deploy replaces any public code still there. Print or scan them from QR codes in the dashboard.
+- On https://urdho.al the demo venue exists too, open 08:00–23:00 Tirana time. Its three accounts start with the password in `.env.vercel-demo` (git-ignored, on the machine that set up the deploy) and must each replace it at first sign-in. Its tables don't use the public `demo-1` … `demo-6` codes: off this machine the seed gives them random ones, and every deploy replaces any public code still there. Print or scan them from QR codes in the dashboard.
 
 ## Live updates and weak signal
 

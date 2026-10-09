@@ -5,7 +5,7 @@ import { parseEnv } from 'node:util';
  * The live site, for the operator commands' --live flag. The address and the operator key live in
  * .env.operator (git-ignored), never in .env, so a local command can't reach production by accident:
  *
- *   URDHO_URL=https://urdho.vercel.app
+ *   URDHO_URL=https://urdho.al
  *   URDHO_OPERATOR_TOKEN=…   (the same value as OPERATOR_TOKEN on the Vercel project)
  */
 
