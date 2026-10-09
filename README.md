@@ -45,6 +45,7 @@ Open http://localhost:5173 for the design-review page, which links to every scre
 | `pnpm staff:reset-password` | A forgotten password, owners' included: `--email person@example.com`. Prints a temporary password once, signs the person out everywhere. `--live` |
 | `pnpm pilot:stats` | Pilot numbers per venue: orders, value, tables served, waiter calls, cash and card, days with orders. `--days 30`, `--live` |
 | `pnpm smoke` | Health check: one table from scan to paid through the API, in its own hidden venue; says OK or which step broke. `--live` checks the live site |
+| `pnpm alerts:test` | Connects the Telegram alerts: lists the chats that wrote to the bot, or sends a test message (see [Alerts](#alerts)) |
 
 ## Deploy
 
@@ -65,6 +66,7 @@ Settings on the Vercel project:
 | `GUEST_SESSION_SECRET` | Random, Sensitive | Signs the guests' table cookies. Changing it moves every phone to a fresh session at its table |
 | `DEMO_STAFF_PASSWORD` | Optional, Sensitive, production only | The demo accounts' starting password (see [Demo data](#demo-data)). Safe to delete once the demo venue exists |
 | `OPERATOR_TOKEN` | Random, Sensitive, production only | Unlocks `/api/operator` for the team's `--live` commands. Without it that part of the API doesn't exist |
+| `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID` | Sensitive, production only | Where server errors are reported (see [Alerts](#alerts)). Without them nothing is sent |
 
 Sensitive values can't be read back, not even by the project's owners. Previews deploy from other branches behind Vercel sign-in.
 
@@ -75,16 +77,27 @@ The pilot is run from the command line, with `--live`. Those commands call `/api
 ```
 URDHO_URL=https://urdho.al
 URDHO_OPERATOR_TOKEN=<the same value as OPERATOR_TOKEN on the Vercel project>
+TELEGRAM_BOT_TOKEN=<optional: the alerts bot, so a failed pnpm smoke --live reaches the chat>
+TELEGRAM_CHAT_ID=<optional: the chat>
 ```
 
 - A new pilot venue: `pnpm venue:create --live --name "Bar Kalaja" --slug bar-kalaja --owner-name "Full Name" --owner-email owner@example.com --tables 10`. It prints the owner's temporary password once (they choose their own at first sign-in) and the sign-in and table addresses. The owner then sets the menu, photos and opening hours, and prints the table cards under QR codes. Print them from the final domain: each code contains the address it was printed from.
 - A forgotten password: `pnpm staff:reset-password --live --email arta@example.com`. Works for any account, owners included (owners can already reset their own staff by removing and re-adding the account). It prints a temporary password once, to tell the person in person or by phone; they are signed out on every device, any sign-in block from wrong guesses is lifted, and they choose their own password at the next sign-in.
-- Is the live site working: `pnpm smoke --live`, after every deploy and before service. In a few seconds it loads the page, the app and the offline worker, then takes one table through the evening the way the phones and the dashboard do: a guest scans and orders, the phone shows the right price, the order and a waiter call reach the board, the kitchen serves it, the waiter answers the call, takes cash and the table closes. It prints each step with its time and ends with OK, or FAILED with the step that broke and what the server answered (exit code 1). It orders from its own venue, `urdho-check` (one table, a 500-lekë coffee in two sizes, a waiter account whose password changes every run), created on the first run: never from a restaurant's, and it's left out of the pilot numbers.
+- Is the live site working: `pnpm smoke --live`. GitHub also runs it every hour during service and after every deploy (see [Alerts](#alerts)). In a few seconds it loads the page, the app and the offline worker, then takes one table through the evening the way the phones and the dashboard do: a guest scans and orders, the phone shows the right price, the order and a waiter call reach the board, the kitchen serves it, the waiter answers the call, takes cash and the table closes. It prints each step with its time and ends with OK, or FAILED with the step that broke and what the server answered (exit code 1). It orders from its own venue, `urdho-check` (one table, a 500-lekë coffee in two sizes, a waiter account whose password changes every run), created on the first run: never from a restaurant's, and it's left out of the pilot numbers.
 - How the pilot is going: `pnpm pilot:stats --live` (last 14 days; `--days 30` for more). Per venue: orders and their value, tables served and orders per table, waiter calls, bills paid in cash and by card (the card share matters for the bank talks), and on how many open days guests ordered, which is the Phase 2 gate. Late-night orders count towards the evening they belong to (service days end at 04:00).
 
 Each venue gets the staff quick-start sheet, one A4 page in Albanian and one in English, at `/quick-start.html` on the live site (`web/public/quick-start.html`). `venue:create` prints the venue's link; add `&help=<your WhatsApp number>` to print the support number on it, then print with Ctrl+P, or send the link to staff. Its button names are copied from the language files, so update it when those change.
 
-To revoke the key, change `OPERATOR_TOKEN` on Vercel and redeploy; put the new value in `.env.operator`. Without `--live`, these commands work on the database in `.env` (`pnpm smoke` runs the API inside the command, so no server is needed).
+To revoke the key, change `OPERATOR_TOKEN` on Vercel and redeploy; put the new value in `.env.operator` and in the GitHub secret `URDHO_OPERATOR_TOKEN`. Without `--live`, these commands work on the database in `.env` (`pnpm smoke` runs the API inside the command, so no server is needed).
+
+### Alerts
+
+Two things reach the team's Telegram chat, through a bot:
+
+- **A bug on the live site:** any request the API answers with 500 (`server/alerts.ts`, wired in `server/vercel.ts`). The message names the route by its pattern (`POST /api/guest/:slug/t/:qrToken/orders`) and the error in one line; a failed database query is reported by the database's own message, never the values it was given, so no guest's name or note leaves the server. The same error on the same route is reported at most once every 15 minutes. Needs `TELEGRAM_BOT_TOKEN` and `TELEGRAM_CHAT_ID` on the Vercel project.
+- **A failed health check:** `.github/workflows/health-check.yml` runs `pnpm smoke --live` every hour from 10:00 to 01:00 Albanian summer time (09:00 to 00:00 in winter), after every production deploy, and on demand (Actions → Health check → Run workflow). A failure is posted with the step and the server's answer, and GitHub emails the repository's owner too. Needs the repository secrets `URDHO_OPERATOR_TOKEN`, `TELEGRAM_BOT_TOKEN` and `TELEGRAM_CHAT_ID`. About 500 minutes of GitHub Actions a month, inside the free 2,000.
+
+Setting it up: in Telegram, ask @BotFather for `/newbot` and copy its token; open the new bot and press Start (or add it to a team group). Put `TELEGRAM_BOT_TOKEN=…` in `.env.operator` and run `pnpm alerts:test`: it lists the chats that wrote to the bot. Add the right one as `TELEGRAM_CHAT_ID=…` and run it again for a test message. Then copy both values to the Vercel project (Production, Sensitive; redeploy) and to the GitHub repository's Actions secrets, with `URDHO_OPERATOR_TOKEN`.
 
 ## API
 

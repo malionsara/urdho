@@ -1,11 +1,12 @@
 import { randomBytes } from 'node:crypto';
 import { parseArgs } from 'node:util';
+import { sendTelegram, telegramConfig } from '../alerts';
 import { createApp } from '../app';
 import { createDb } from '../db/client';
 import { requireEnv } from '../env';
 import { storageFromEnv } from '../photos';
-import { liveTarget } from './live';
-import { runSmokeCheck, type SmokeOptions, type StepResult } from './smoke-check';
+import { liveTarget, operatorSettings } from './live';
+import { failureAlert, runSmokeCheck, type SmokeOptions, type StepResult } from './smoke-check';
 
 /*
  * The health check: one table's whole evening, from scan to paid, through the real API, in a few
@@ -15,7 +16,8 @@ import { runSmokeCheck, type SmokeOptions, type StepResult } from './smoke-check
  *   pnpm smoke          the API in this process, on the database in .env (no server needed)
  *   pnpm smoke --live   the live site, with the key in .env.operator; also loads the page and app files
  *
- * Exits with code 1 when a step fails.
+ * Exits with code 1 when a step fails. A failed --live check also goes to the team's Telegram when
+ * TELEGRAM_BOT_TOKEN and TELEGRAM_CHAT_ID are set; GitHub runs it every hour and after each deploy.
  */
 
 const { values } = parseArgs({ options: { live: { type: 'boolean', default: false } } });
@@ -48,4 +50,6 @@ if (result.ok) {
   const failed = result.steps.find((s) => !s.ok);
   console.log(`\nFAILED at "${failed?.name}" after ${seconds(result.ms)}. Restaurants may be hitting the same problem.\n`);
   process.exitCode = 1;
+  const telegram = values.live ? telegramConfig(operatorSettings()) : undefined;
+  if (telegram) console.log((await sendTelegram(telegram, failureAlert(result, options.baseUrl))) ? 'Sent to Telegram.\n' : "Couldn't reach Telegram.\n");
 }

@@ -1,0 +1,46 @@
+# The health check (pnpm smoke --live) against https://urdho.al: every hour from 10:00 to 01:00
+# Albanian summer time (09:00 to 00:00 in winter), and after every production deploy. A failure
+# goes to the team's Telegram chat, and GitHub emails the repository's owner as well.
+#
+# Repository secrets (Settings → Secrets and variables → Actions):
+#   URDHO_OPERATOR_TOKEN   the same value as OPERATOR_TOKEN on the Vercel project
+#   TELEGRAM_BOT_TOKEN     the alerts bot, from @BotFather
+#   TELEGRAM_CHAT_ID       the chat it writes to (pnpm alerts:test finds it)
+name: Health check
+
+on:
+  schedule:
+    - cron: '0 8-23 * * *'
+  deployment_status:
+  workflow_dispatch:
+
+jobs:
+  smoke:
+    # After a deploy, only once Vercel reports the production deploy ready.
+    if: github.event_name != 'deployment_status' || (github.event.deployment_status.state == 'success' && github.event.deployment.environment == 'Production')
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      URDHO_URL: https://urdho.al
+      URDHO_OPERATOR_TOKEN: ${{ secrets.URDHO_OPERATOR_TOKEN }}
+      TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+      TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+    steps:
+      # Until the key is added, every run passes with a note instead of failing (and emailing) each hour.
+      - id: setup
+        run: |
+          if [ -n "$URDHO_OPERATOR_TOKEN" ]; then echo "ready=true" >> "$GITHUB_OUTPUT"
+          else echo "::notice::Skipped: add the URDHO_OPERATOR_TOKEN secret to run the health check (README, Alerts)."; fi
+      - if: steps.setup.outputs.ready == 'true'
+        uses: actions/checkout@v4
+      - if: steps.setup.outputs.ready == 'true'
+        uses: pnpm/action-setup@v4
+      - if: steps.setup.outputs.ready == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - if: steps.setup.outputs.ready == 'true'
+        run: pnpm install --frozen-lockfile
+      - if: steps.setup.outputs.ready == 'true'
+        run: pnpm smoke --live

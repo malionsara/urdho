@@ -5,7 +5,7 @@ import { venue } from '../db/schema';
 import { pilotStats, prepareHealthCheck } from '../repos/operator';
 import { testApi } from '../test/api';
 import { connectTestDb } from '../test/db';
-import { runSmokeCheck } from './smoke-check';
+import { failureAlert, runSmokeCheck } from './smoke-check';
 
 const db = connectTestDb();
 const TOKEN = 'test-operator-key-0123456789';
@@ -39,6 +39,17 @@ describe('the health check', () => {
     expect(result.ok).toBe(false);
     expect(result.steps.at(-1)).toMatchObject({ name: 'The guest orders', ok: false });
     expect(result.steps.at(-1)?.problem).toMatch(/answered 500 internal \(expected 201\)/);
+  });
+
+  it("writes the failed step and the server's answer into the alert", async () => {
+    const result = await run((url, init) =>
+      init.method === 'POST' && url.endsWith('/orders') ? Response.json({ error: { code: 'internal' } }, { status: 500 }) : app.request(url, init),
+    );
+    const alert = failureAlert(result, 'https://urdho.al');
+    expect(alert).toContain('Urdho health check failed on https://urdho.al');
+    expect(alert).toContain('Step: The guest orders');
+    expect(alert).toMatch(/answered 500 internal/);
+    expect(alert).toContain(`${result.steps.length - 1} of ${result.steps.length} steps passed.`);
   });
 
   it('says so when the site cannot be reached', async () => {

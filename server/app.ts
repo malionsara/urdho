@@ -1,7 +1,8 @@
 import { Hono } from 'hono';
 import { csrf } from 'hono/csrf';
 import type { Db } from './db/client';
-import { handleError, type AppEnv } from './http';
+import type { ServerErrorAlert } from './alerts';
+import { errorHandler, type AppEnv } from './http';
 import { cashProvider, type PaymentProvider } from './payments/provider';
 import type { PhotoStorage } from './photos';
 import { guestRoutes } from './routes/guest';
@@ -21,10 +22,12 @@ interface AppOptions {
   payments?: PaymentProvider;
   /** Unlocks /api/operator (OPERATOR_TOKEN); without it that section doesn't exist. */
   operatorToken?: string;
+  /** Told about every unexpected error (a bug, answered 500): the live site sends it to Telegram. */
+  onUnexpectedError?: ServerErrorAlert;
 }
 
 /** The whole API. Its dependencies are passed in, so tests can use their own. */
-export function createApp({ db, storage, guestSecret, payments = cashProvider, operatorToken }: AppOptions) {
+export function createApp({ db, storage, guestSecret, payments = cashProvider, operatorToken, onUnexpectedError }: AppOptions) {
   const app = new Hono<AppEnv>().basePath('/api');
 
   // Refuses form posts from other sites; the API itself only accepts JSON and photo uploads.
@@ -48,7 +51,8 @@ export function createApp({ db, storage, guestSecret, payments = cashProvider, o
   app.route('/operator', operatorRoutes(db, operatorToken));
 
   app.notFound((c) => c.json({ error: { code: 'not_found' } }, 404));
-  app.onError(handleError);
+  // The route's pattern (/api/guest/:slug/t/:qrToken/orders), never the address itself with its codes and ids.
+  app.onError(errorHandler(onUnexpectedError && ((error, c) => onUnexpectedError(error, { method: c.req.method, route: c.req.routePath }))));
   return app;
 }
 

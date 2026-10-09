@@ -36,17 +36,21 @@ export const forbidden = () => new ApiError(403, 'forbidden');
 /** Also used for other venues' rows: they don't exist as far as the caller can tell. */
 export const notFound = () => new ApiError(404, 'not_found');
 
-export const handleError: ErrorHandler = (error, c) => {
-  if (error instanceof ApiError) {
-    return c.json({ error: { code: error.code, ...(error.details ? { details: error.details } : {}) } }, error.status);
-  }
-  // Raised by Hono's own middleware, e.g. the CSRF check refusing a cross-site form post.
-  if (error instanceof HTTPException) {
-    return c.json({ error: { code: error.status === 403 ? 'forbidden' : 'bad_request' } }, error.status);
-  }
-  console.error(error);
-  return c.json({ error: { code: 'internal' } }, 500);
-};
+/** Answers errors as { error: { code } }. A bug (anything but ApiError) is logged, reported, and answers 500. */
+export function errorHandler(onUnexpected?: (error: unknown, c: Context) => void): ErrorHandler {
+  return (error, c) => {
+    if (error instanceof ApiError) {
+      return c.json({ error: { code: error.code, ...(error.details ? { details: error.details } : {}) } }, error.status);
+    }
+    // Raised by Hono's own middleware, e.g. the CSRF check refusing a cross-site form post.
+    if (error instanceof HTTPException) {
+      return c.json({ error: { code: error.status === 403 ? 'forbidden' : 'bad_request' } }, error.status);
+    }
+    console.error(error);
+    onUnexpected?.(error, c);
+    return c.json({ error: { code: 'internal' } }, 500);
+  };
+}
 
 /** Parses and validates a JSON body. Fields the schema doesn't know are dropped. */
 export async function readJson<S extends z.ZodType>(c: Context, schema: S): Promise<z.output<S>> {

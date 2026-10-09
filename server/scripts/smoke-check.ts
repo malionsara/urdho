@@ -203,3 +203,12 @@ export async function runSmokeCheck({ baseUrl, operatorToken, fetch: send = fetc
 
   return { ok: steps.every((s) => s.ok), steps, ms: performance.now() - started };
 }
+
+/** The Telegram message for a failed check: which step, what the server answered, and where. */
+export function failureAlert(result: SmokeResult, baseUrl: string): string {
+  const failed = result.steps.find((s) => !s.ok);
+  const passed = result.steps.filter((s) => s.ok).length;
+  return [`🔴 Urdho health check failed on ${baseUrl}`, `Step: ${failed?.name ?? 'unknown'}`, failed?.problem, `${passed} of ${result.steps.length} steps passed.`]
+    .filter(Boolean)
+    .join('\n');
+}
