@@ -143,7 +143,9 @@ describe('guessing passwords', () => {
   it(`stops one address trying many accounts after ${LOGIN_LIMIT.address} failures`, async () => {
     const v = await makeVenueWithStaff(db, 'A');
     const ip = address();
-    for (let i = 0; i < LOGIN_LIMIT.address; i++) await attempt(`guess-${i}-${ip}@nowhere.test`, 'wrong guess', ip);
+    // Recorded directly: 30 real attempts are 30 deliberately slow password checks, enough to time
+    // the test out on a busy machine. The first test here shows real attempts are recorded.
+    await db.insert(loginFailure).values(Array.from({ length: LOGIN_LIMIT.address }, (_, i) => ({ email: `guess-${i}@nowhere.test`, ip })));
     expect((await attempt(v.waiter.email, PASSWORD, ip)).status).toBe(429);
   });
 
