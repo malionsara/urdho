@@ -32,6 +32,8 @@ export const LOGIN_LIMIT = { minutes: 15, accountAtAddress: 5, account: 50, addr
 
 /** Login only: whether this email and address have failed too often lately. */
 export async function isLoginBlocked(db: Db, email: string, ip: string): Promise<boolean> {
+  // Every sign-in attempt clears records older than a day (the privacy notice says "about a day").
+  await db.delete(loginFailure).where(lt(loginFailure.createdAt, sql`now() - interval '1 day'`));
   const account = email.toLowerCase();
   const knownAddress = ip !== '';
   const [counts] = await db
@@ -56,10 +58,9 @@ export async function isLoginBlocked(db: Db, email: string, ip: string): Promise
   );
 }
 
-/** Login only: notes a failed sign-in, and forgets ones older than a day. */
+/** Login only: notes a failed sign-in. */
 export async function recordLoginFailure(db: Db, email: string, ip: string) {
   await db.insert(loginFailure).values({ email: email.toLowerCase(), ip });
-  await db.delete(loginFailure).where(lt(loginFailure.createdAt, sql`now() - interval '1 day'`));
 }
 
 /** Login only: a successful sign-in clears this account's recent typos from this address. */

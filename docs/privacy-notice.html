@@ -1,0 +1,254 @@
+<!doctype html>
+<html lang="sq">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Urdho · Privatësia (draft)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wdth,wght@12..96,75..100,600..800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<!--
+  DRAFT privacy notice for guests and venue staff, Albanian and English, for a lawyer to review.
+  Not published: once approved, it moves to web/public/privacy.html and the guest menu and the
+  staff login link to it. Every statement matches what the code does on 9 October 2026; check
+  again if storage changes (localStorage keys, cookies, tables, providers).
+  Placeholders in [SQUARE BRACKETS] are decisions for the business and the lawyer.
+-->
+<style>
+  :root {
+    --ink: #17120f;
+    --ink-soft: #4a423c;
+    --muted: #776d65;
+    --line: #e6ded3;
+    --paper: #ffffff;
+    --desk: #e8e1d7;
+    --brand: #c8432a;
+    --saffron: #f4b63f;
+    --mark: #fff3d1;
+    --display: 'Bricolage Grotesque', 'Arial Narrow', system-ui, sans-serif;
+    --body: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+    color-scheme: light;
+  }
+
+  * { box-sizing: border-box; }
+
+  html { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+
+  body { margin: 0; background: var(--desk); color: var(--ink); font: 400 10.4pt/1.55 var(--body); }
+
+  .page {
+    position: relative;
+    width: 210mm;
+    min-height: 297mm;
+    margin: 18px auto;
+    padding: 16mm 18mm 14mm;
+    background: var(--paper);
+    box-shadow: 0 10px 30px rgb(23 18 15 / 0.18);
+  }
+
+  .page::before {
+    content: '';
+    position: absolute;
+    inset: 0 0 auto;
+    height: 4mm;
+    background-color: var(--brand);
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='8' viewBox='0 0 16 8'%3E%3Cpath d='M8 0l4 4-4 4-4-4z' fill='%23f4b63f'/%3E%3Cpath d='M8 2.2l1.8 1.8L8 5.8 6.2 4z' fill='%2317120f'/%3E%3C/svg%3E");
+    background-size: auto 100%;
+  }
+
+  .draft {
+    display: inline-block;
+    margin-bottom: 5mm;
+    padding: 1.2mm 3mm;
+    border: 1.5px solid var(--brand);
+    border-radius: 2mm;
+    color: var(--brand);
+    font: 800 8.6pt/1.3 var(--display);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+
+  h1 { margin: 0 0 1.5mm; font: 800 24pt/1.05 var(--display); font-stretch: 82%; text-wrap: balance; }
+
+  .lead { margin: 0 0 7mm; max-width: 62ch; color: var(--ink-soft); font-size: 11.2pt; }
+
+  h2 {
+    display: flex;
+    align-items: center;
+    gap: 2.2mm;
+    margin: 6.5mm 0 2mm;
+    font: 800 13.5pt/1.15 var(--display);
+    font-stretch: 86%;
+    break-after: avoid;
+  }
+
+  h2::before {
+    content: '';
+    width: 2.6mm;
+    height: 2.6mm;
+    flex: none;
+    background: var(--saffron);
+    transform: rotate(45deg);
+    box-shadow: inset 0 0 0 0.7mm var(--brand);
+  }
+
+  p, li { max-width: 68ch; }
+
+  p { margin: 0 0 2.4mm; }
+
+  ul { margin: 0 0 2.4mm; padding-left: 5mm; }
+
+  li { margin-bottom: 1.4mm; }
+
+  li::marker { color: var(--brand); }
+
+  /* A blank the business or the lawyer still has to fill. */
+  .fill { padding: 0 1mm; border-radius: 1mm; background: var(--mark); font-weight: 600; }
+
+  .muted { color: var(--muted); }
+
+  .box { margin: 5mm 0 0; padding: 4mm 5mm; border: 1px solid var(--line); border-radius: 3mm; }
+
+  .box h2 { margin-top: 0; font-size: 12pt; }
+
+  .notes ol { margin: 0; padding-left: 6mm; }
+
+  .notes li { margin-bottom: 3mm; }
+
+  .notes strong { font-family: var(--display); font-weight: 800; }
+
+  .en { color: var(--ink-soft); font-size: 9.6pt; }
+
+  footer { margin-top: 8mm; padding-top: 3mm; border-top: 1px solid var(--line); color: var(--muted); font-size: 8.4pt; display: flex; justify-content: space-between; gap: 4mm; }
+
+  @media screen and (max-width: 860px) {
+    body { font-size: 15px; }
+    .page { width: auto; min-height: 0; margin: 0 0 12px; padding: 26px 16px 20px; box-shadow: none; }
+  }
+
+  @page { size: A4; margin: 0; }
+
+  @media print {
+    body { background: var(--paper); }
+    .page { margin: 0; box-shadow: none; break-after: page; }
+    .page:last-of-type { break-after: auto; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ===================================================== Shqip -->
+<article class="page" lang="sq">
+  <span class="draft">Draft për juristin · nuk është publikuar</span>
+  <h1>Privatësia në Urdho</h1>
+  <p class="lead">Si përdoren të dhënat tuaja kur porositni nga tavolina me Urdho, dhe kur punoni me panelin e stafit.</p>
+
+  <h2>Kush është përgjegjës</h2>
+  <p>Porosia juaj shkon te lokali ku jeni ulur. Lokali është përgjegjës për porositë e veta dhe vendos si i përdor. Urdho është shërbimi që lokali përdor për porositë nga tavolina; e ofron <span class="fill">[EMRI I SHOQËRISË]</span>, <span class="fill">[ADRESA]</span>, <span class="fill">[EMAIL PËR PRIVATËSINË]</span>, dhe i ruan të dhënat për llogari të lokalit.</p>
+
+  <h2>Çfarë ruhet kur porositni</h2>
+  <ul>
+    <li>Çfarë porositni, në cilën tavolinë dhe në ç'orë, dhe si u pagua fatura e tavolinës: me para në dorë ose me kartë, dhe shuma. Nuk marrim kurrë të dhëna karte; paguani te stafi.</li>
+    <li>Emrin tuaj, vetëm nëse e shkruani. Nuk është i detyrueshëm; i duhet stafit për të ditur kujt t'ia sjellë porosinë.</li>
+    <li>Shënimin për kuzhinën, nëse shkruani një. Nëse shkruani për një alergji, ky shënim mund të tregojë diçka për shëndetin tuaj. Përdoret vetëm që kuzhina ta dijë.</li>
+    <li>Thirrjet për kamarierin nga telefoni juaj.</li>
+  </ul>
+  <p>Nuk kërkojmë numër telefoni, email ose llogari. Nuk ka reklama, analitikë apo gjurmues, dhe faqja nuk ngarkon asgjë nga Google apo rrjete sociale.</p>
+
+  <h2>Çfarë mbetet në telefonin tuaj</h2>
+  <ul>
+    <li>Shporta dhe emri që shkruat, që të mos i shkruani sërish herën tjetër.</li>
+    <li>Gjuha që zgjodhët dhe një kopje e menusë, që menuja të hapet edhe kur interneti është i dobët.</li>
+    <li>Një cookie që e lidh telefonin me tavolinën tuaj për 12 orë. Pa të nuk mund të porosisni.</li>
+    <li>Vetë faqja dhe fotot e pjatave, që të hapen më shpejt herën tjetër.</li>
+  </ul>
+  <p>Të gjitha këto duhen që porosia të funksionojë. Mund t'i fshini kurdo nga cilësimet e shfletuesit.</p>
+
+  <h2>Pse</h2>
+  <p>Për t'ia çuar porosinë kuzhinës, për të mbajtur faturën e tavolinës deri në pagesë, dhe për siguri, p.sh. për të kufizuar porositë e shumta nga e njëjta tavolinë.</p>
+
+  <h2>Sa kohë</h2>
+  <p>Porositë ruhen <span class="fill">[AFATI, p.sh. 24 muaj]</span>, që lokali të shohë historikun e vet. Emri dhe shënimi i porosisë fshihen pas <span class="fill">[AFATI, p.sh. 90 ditësh]</span>.</p>
+
+  <h2>Kush tjetër i sheh</h2>
+  <p>Ofruesi i serverëve mban regjistra teknikë afatshkurtër të kërkesave, si adresa e internetit (IP) dhe ora, për siguri dhe për zgjidhjen e problemeve.</p>
+  <p>Stafi i lokalit. Ofruesit teknikë që i ruajnë për ne: Vercel (serverët, në Frankfurt, Gjermani; Vercel Inc. është shoqëri amerikane) dhe Neon (baza e të dhënave, në Frankfurt). Nuk i shesim dhe nuk i japim askujt tjetër.</p>
+
+  <h2>Të drejtat tuaja</h2>
+  <p>Mund të kërkoni t'i shihni, t'i korrigjoni ose t'i fshini të dhënat tuaja: pyesni stafin e lokalit ose na shkruani te <span class="fill">[EMAIL PËR PRIVATËSINË]</span>. Nëse nuk jeni të kënaqur me përgjigjen, mund të ankoheni te Komisioneri për të Drejtën e Informimit dhe Mbrojtjen e të Dhënave Personale.</p>
+
+  <section class="box">
+    <h2>Për stafin e lokalit</h2>
+    <p>Për llogaritë e stafit ruajmë emrin, email-in dhe rolin. Fjalëkalimi ruhet vetëm si kod që nuk lexohet dot (hash). Çdo hyrje në panel mbahet aktive deri në 30 ditë. Hyrjet e dështuara ruhen me email-in dhe adresën e internetit (IP) për rreth një ditë, për të ndalur hamendësimin e fjalëkalimeve. Ofruesi i serverëve mban regjistra teknikë afatshkurtër për siguri dhe për zgjidhjen e problemeve.</p>
+  </section>
+
+  <footer><span>Urdho · Privatësia · draft, 9 tetor 2026</span><span>English on the next page</span></footer>
+</article>
+
+<!-- ===================================================== English -->
+<article class="page" lang="en">
+  <span class="draft">Draft for the lawyer · not published</span>
+  <h1>Privacy at Urdho</h1>
+  <p class="lead">How your information is used when you order from your table with Urdho, and when you work with the staff dashboard.</p>
+
+  <h2>Who is responsible</h2>
+  <p>Your order goes to the venue you are sitting in. The venue is responsible for its orders and decides how they are used. Urdho is the service the venue uses for table ordering; it is provided by <span class="fill">[COMPANY NAME]</span>, <span class="fill">[ADDRESS]</span>, <span class="fill">[PRIVACY EMAIL]</span>, which stores the information on the venue's behalf.</p>
+
+  <h2>What is kept when you order</h2>
+  <ul>
+    <li>What you order, at which table and when, and how the table's bill was paid: in cash or by card, and the amount. We never receive card details; you pay the staff.</li>
+    <li>Your name, only if you type one. It is optional; it helps the staff bring the order to the right person.</li>
+    <li>Your note for the kitchen, if you write one. If you mention an allergy, the note may say something about your health. It is only used so the kitchen knows.</li>
+    <li>Waiter calls from your phone.</li>
+  </ul>
+  <p>We don't ask for a phone number, an email or an account. There are no ads, analytics or trackers, and the page loads nothing from Google or social networks.</p>
+
+  <h2>What stays on your phone</h2>
+  <ul>
+    <li>Your basket and the name you typed, so you don't have to type them again next time.</li>
+    <li>The language you chose and a copy of the menu, so the menu opens even on a weak signal.</li>
+    <li>A cookie that links your phone to your table for 12 hours. Without it you can't order.</li>
+    <li>The page itself and the dish photos, so they open faster next time.</li>
+  </ul>
+  <p>All of these are needed for ordering to work. You can delete them at any time in your browser's settings.</p>
+
+  <h2>Why</h2>
+  <p>To send your order to the kitchen, to keep the table's bill until it is paid, and for security, for example to limit a flood of orders from one table.</p>
+
+  <h2>For how long</h2>
+  <p>Orders are kept for <span class="fill">[PERIOD, e.g. 24 months]</span> so the venue can see its own history. The name and note on an order are deleted after <span class="fill">[PERIOD, e.g. 90 days]</span>.</p>
+
+  <h2>Who else sees it</h2>
+  <p>The server provider keeps short-lived technical logs of requests, such as the internet (IP) address and the time, for security and troubleshooting.</p>
+  <p>The venue's staff. The technical providers that store it for us: Vercel (servers in Frankfurt, Germany; Vercel Inc. is a US company) and Neon (database in Frankfurt). We don't sell it or give it to anyone else.</p>
+
+  <h2>Your rights</h2>
+  <p>You can ask to see, correct or delete your information: ask the venue's staff, or write to <span class="fill">[PRIVACY EMAIL]</span>. If you're not satisfied with the answer, you can complain to the Information and Data Protection Commissioner of Albania.</p>
+
+  <section class="box">
+    <h2>For the venue's staff</h2>
+    <p>For staff accounts we keep the name, email and role. The password is stored only as an unreadable code (a hash). Each sign-in stays active for up to 30 days. Failed sign-ins are kept with the email and the internet (IP) address for about a day, to stop password guessing. The server provider keeps short-lived technical logs for security and troubleshooting.</p>
+  </section>
+
+  <footer><span>Urdho · Privacy · draft, 9 October 2026</span><span>Shqip në faqen e parë</span></footer>
+</article>
+
+<!-- ===================================================== Notes for the lawyer -->
+<article class="page notes" lang="sq">
+  <span class="draft">Shënime për juristin · Notes for the lawyer</span>
+  <h1>Çfarë duhet vendosur</h1>
+  <p class="lead">Teksti më sipër përshkruan saktësisht çfarë bën aplikacioni sot. Këto pika kërkojnë vendimin tuaj para se faqja të publikohet. <span class="en">The notice above describes exactly what the app does today. These points need your decision before it is published.</span></p>
+  <ol>
+    <li><strong>Rolet.</strong> Kemi supozuar që lokali është kontrollues dhe shoqëria që ofron Urdho përpunues për porositë dhe llogaritë e stafit. Nëse po, duhet një marrëveshje përpunimi me çdo lokal pilot. Për regjistrat e sigurisë (hyrjet e dështuara) Urdho mund të jetë kontrollues. <span class="en">Roles: we assumed the venue is the controller and Urdho's company the processor. If so, each pilot venue needs a processing agreement. For security records (failed sign-ins) Urdho may be the controller.</span></li>
+    <li><strong>Afatet e ruajtjes.</strong> Sot asgjë nuk fshihet automatikisht, përveç hyrjeve të dështuara (pas një dite). Vendosni afatet në seksionin "Sa kohë"; fshirja automatike shtohet në aplikacion pas vendimit. <span class="en">Retention: today nothing is deleted automatically except failed sign-ins (after a day). Set the periods; automatic deletion will be added to the app once decided.</span></li>
+    <li><strong>Transferimi jashtë vendit.</strong> Të dhënat ruhen dhe përpunohen në Frankfurt (BE), por Vercel Inc. është shoqëri amerikane. A mjaftojnë kushtet standarde kontraktuale të Vercel-it dhe Neon-it, apo duhet diçka tjetër sipas ligjit shqiptar? <span class="en">Transfers: data is stored and processed in Frankfurt (EU), but Vercel Inc. is a US company. Are Vercel's and Neon's standard contractual clauses enough under Albanian law?</span></li>
+    <li><strong>Shënimet për alergji.</strong> Shënimi për kuzhinën mund të përmbajë të dhëna shëndetësore. A mjafton ky njoftim, apo duhet pëlqim i veçantë, p.sh. një fjali pranë fushës së shënimit? <span class="en">Allergy notes may contain health data. Is this notice enough, or is separate consent needed, e.g. a line next to the note field?</span></li>
+    <li><strong>Cookies dhe ruajtja në telefon.</strong> Përdoren vetëm për funksionimin e porosisë; nuk ka analitikë apo reklama. A konfirmoni që nuk duhet banner pëlqimi? <span class="en">Cookies and phone storage are only those ordering needs; no analytics or ads. Can you confirm no consent banner is required?</span></li>
+    <li><strong>Referencat ligjore.</strong> Kontrolloni emrin e saktë të autoritetit (Komisioneri për të Drejtën e Informimit dhe Mbrojtjen e të Dhënave Personale) dhe nëse duhet cituar ligji përkatës. <span class="en">Check the authority's exact name and whether the law itself should be cited.</span></li>
+    <li><strong>Ku shfaqet.</strong> Propozimi: lidhja "Privatësia" në fund të menusë dhe te hyrja e stafit, në gjuhën që ka zgjedhur përdoruesi. <span class="en">Placement: a "Privacy" link at the bottom of the menu and on the staff sign-in, in the user's language.</span></li>
+  </ol>
+  <footer><span>Urdho · Shënime për juristin · 9 tetor 2026</span><span>Fill: [SQUARE BRACKETS]</span></footer>
+</article>
+
+</body>
+</html>

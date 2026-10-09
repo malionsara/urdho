@@ -147,6 +147,13 @@ describe('guessing passwords', () => {
     expect((await attempt(v.waiter.email, PASSWORD, ip)).status).toBe(429);
   });
 
+  it('forgets failed sign-ins after a day, at the next sign-in attempt by anyone', async () => {
+    const v = await makeVenueWithStaff(db, 'A');
+    const old = await db.insert(loginFailure).values({ email: 'old@example.test', ip: address(), createdAt: sql`now() - interval '25 hours'` }).returning({ id: loginFailure.id });
+    await attempt(v.waiter.email, PASSWORD, address());
+    expect(await db.select().from(loginFailure).where(eq(loginFailure.id, old[0]!.id))).toEqual([]);
+  });
+
   it(`stops guessing one account from many addresses after ${LOGIN_LIMIT.account} failures`, async () => {
     const v = await makeVenueWithStaff(db, 'A');
     await db.insert(loginFailure).values(Array.from({ length: LOGIN_LIMIT.account }, () => ({ email: v.manager.email.toLowerCase(), ip: address() })));
