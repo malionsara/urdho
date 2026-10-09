@@ -1,5 +1,6 @@
 import type { GuestMenu, OrderInput, PlacedOrder } from '@shared/types';
-import { api, ApiError } from '../lib/http';
+import { api, ApiError, readResponse } from '../lib/http';
+import { slowApi } from './devFlags';
 
 /*
  * The guest app's API, addressed by the table's QR code: /api/guest/<slug>/t/<qrToken>/…
@@ -31,10 +32,26 @@ function savedMenu(slug: string, qrToken: string): GuestMenu | null {
   }
 }
 
+/**
+ * The menu request index.html started before the app had loaded, if it was for this table. Used
+ * once: later loads (a refresh, a sold-out update) ask again.
+ */
+async function takeEarlyScan(slug: string, qrToken: string): Promise<GuestMenu | undefined> {
+  const early = typeof window === 'undefined' ? undefined : window.__urdhoScan;
+  if (!early || early.url !== `/api${tablePath(slug, qrToken)}/scan`) return undefined;
+  window.__urdhoScan = undefined;
+  // The design-review switch ?slow=1 is there to show the loading state; let it.
+  if (slowApi()) return undefined;
+  const res = await early.response.catch(() => {
+    throw new ApiError(0, 'network');
+  });
+  return readResponse<GuestMenu>(res);
+}
+
 /** Scans the table: opens or joins its session and returns the menu. */
 export async function fetchMenu(slug: string, qrToken: string): Promise<LoadedMenu> {
   try {
-    const menu = await api<GuestMenu>(`${tablePath(slug, qrToken)}/scan`, { method: 'POST' });
+    const menu = (await takeEarlyScan(slug, qrToken)) ?? (await api<GuestMenu>(`${tablePath(slug, qrToken)}/scan`, { method: 'POST' }));
     saveMenu(slug, qrToken, menu);
     return menu;
   } catch (error) {

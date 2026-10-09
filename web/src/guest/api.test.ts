@@ -48,6 +48,33 @@ describe('the guest menu', () => {
   });
 });
 
+describe('the menu request the page starts before the app loads', () => {
+  const early = (response: Promise<Response>, url = '/api/guest/demo/t/demo-4/scan') => vi.stubGlobal('window', { __urdhoScan: { url, response } });
+
+  it('is used for the first load of its own table, and only once', async () => {
+    early(Promise.resolve(json(200, menu)));
+    const calls = fakeServer(json(200, { ...menu, orderingOpen: false }));
+    expect(await fetchMenu('demo', 'demo-4')).toEqual(menu);
+    expect(calls).toEqual([]);
+    expect(await fetchMenu('demo', 'demo-4')).toMatchObject({ orderingOpen: false });
+    expect(calls).toEqual(['POST /api/guest/demo/t/demo-4/scan']);
+  });
+
+  it("is left alone when it was for another table", async () => {
+    early(Promise.resolve(json(200, menu)), '/api/guest/demo/t/demo-1/scan');
+    const calls = fakeServer(json(200, menu));
+    await fetchMenu('demo', 'demo-4');
+    expect(calls).toHaveLength(1);
+  });
+
+  it('falls back to the saved menu when the signal dropped', async () => {
+    fakeServer(json(200, menu));
+    await fetchMenu('demo', 'demo-4');
+    early(Promise.reject(new TypeError('Failed to fetch')));
+    expect(await fetchMenu('demo', 'demo-4')).toEqual({ ...menu, offline: true });
+  });
+});
+
 describe('ordering from the phone', () => {
   it('scans the table again once if the session lapsed, then sends the same order', async () => {
     const calls = fakeServer(refusal(401, 'no_session'), json(200, menu), json(201, { orderId: 'o1' }));

@@ -172,6 +172,8 @@ The schema in `server/db/schema.ts` follows the data model in the spec; migratio
 
 Short polling, no sockets: the board and the tables screen ask every 3 seconds (the board's Live badge turns into a red "No connection" while it can't reach the server), a guest's order status every 5 seconds until it is served, and an open menu every minute (so sold-out dishes grey out). Polling pauses while a tab is hidden or a phone is locked and catches up as soon as it is visible again.
 
+A guest's first menu doesn't wait for the app: a few lines in `web/index.html` ask for it the moment the page opens, while the app's code is still downloading, and the app picks the answer up (`takeEarlyScan` in `web/src/guest/api.ts`). On a simulated 3G phone (1.44 Mbps, 560 ms round trips, 4× slower processor) the menu now shows after about 2.9 s instead of 4.2 s, and on the live site the request also covers the database waking up after a quiet spell.
+
 The phone keeps the last menu it loaded. Without a connection the guest still sees it, with a "no internet" banner, and ordering waits for the connection. An order that was sent but got no answer is retried with the same `clientRef`, so the kitchen never gets it twice. A dish that sold out in the meantime is taken out of the basket by name, and after payment the status page says the table is closed.
 
 ## Install on a tablet

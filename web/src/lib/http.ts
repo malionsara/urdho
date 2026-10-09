@@ -36,6 +36,11 @@ export async function api<T>(path: string, { method = 'GET', body, form }: Optio
   } catch {
     throw new ApiError(0, 'network');
   }
+  return readResponse<T>(res);
+}
+
+/** The body of an API response, or the ApiError it carries. */
+export async function readResponse<T>(res: Response): Promise<T> {
   if (res.status === 204) return undefined as T;
   const data = (await res.json().catch(() => null)) as { error?: { code?: string; details?: unknown } } | null;
   if (!res.ok) throw new ApiError(res.status, data?.error?.code ?? 'internal', data?.error?.details);

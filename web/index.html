@@ -7,6 +7,16 @@
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
     <title>Urdho</title>
+    <script>
+      // A guest on a weak signal: ask for the menu now, while the app itself is still downloading.
+      // The app picks this answer up for its first menu load (web/src/guest/api.ts).
+      (function () {
+        var m = location.pathname.match(/^\/([^/]+)\/t\/([^/]+)(?:\/|$)/);
+        if (!m || m[1] === 'staff' || m[1] === 'api' || m[1] === 'assets') return;
+        var url = '/api/guest/' + m[1] + '/t/' + m[2] + '/scan';
+        window.__urdhoScan = { url: url, response: fetch(url, { method: 'POST', credentials: 'same-origin' }) };
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>
