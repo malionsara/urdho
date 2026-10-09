@@ -15,6 +15,6 @@ attachDatabasePool(pool);
 
 // Photos must go to Vercel Blob here: a function's disk is read-only and forgets everything.
 const storage = blobStorage(requireEnv('BLOB_READ_WRITE_TOKEN'));
-const app = createApp({ db, storage, guestSecret: requireEnv('GUEST_SESSION_SECRET') });
+const app = createApp({ db, storage, guestSecret: requireEnv('GUEST_SESSION_SECRET'), operatorToken: process.env.OPERATOR_TOKEN || undefined });
 
 export default { fetch: (request: Request) => app.fetch(request) };

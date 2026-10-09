@@ -25,6 +25,24 @@ export const newStaffInput = z.object({
   role: z.enum(STAFF_ROLES),
 });
 
+/** Addresses the app itself uses at the top level, so a venue can't be called them. */
+export const RESERVED_SLUGS = ['api', 'assets', 'demo', 'icons', 'staff', 'uploads'];
+
+/** A new pilot venue with its owner (operator only: pnpm venue:create). */
+export const newVenueInput = z.object({
+  name: z.string().trim().min(1).max(80),
+  slug: z
+    .string()
+    .regex(/^[a-z0-9]+(-[a-z0-9]+)*$/, 'lowercase letters, digits and single hyphens, e.g. tave-raki')
+    .max(40)
+    .refine((slug) => !RESERVED_SLUGS.includes(slug), 'that address is used by the app itself'),
+  ownerName: z.string().trim().min(1).max(80),
+  ownerEmail: email,
+  tables: z.coerce.number().int().min(1).max(200).default(6),
+});
+
+export type NewVenueInput = z.infer<typeof newVenueInput>;
+
 const hhmm = z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/);
 
 /** Photos are stored as https URLs (Vercel Blob) or paths on our own site. */

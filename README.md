@@ -41,7 +41,8 @@ Open http://localhost:5173 for the design-review page, which links to every scre
 | `pnpm db:seed` | Replace the demo venue, leaving other data alone |
 | `pnpm db:generate` | Write a migration after changing `server/db/schema.ts` |
 | `pnpm db:studio` | Browse the data in Drizzle Studio |
-| `pnpm venue:create` | Create a pilot venue, its tables and its owner; prints the owner's temporary password once |
+| `pnpm venue:create` | Create a pilot venue, its tables and its owner; prints the owner's temporary password once. `--live` creates it on the live site |
+| `pnpm pilot:stats` | Pilot numbers per venue: orders, value, tables served, waiter calls, cash and card, days with orders. `--days 30`, `--live` |
 
 ## Deploy
 
@@ -61,10 +62,23 @@ Settings on the Vercel project:
 | `BLOB_READ_WRITE_TOKEN` | Blob store `urdho-photos` (public, Frankfurt) | Photo uploads. Required in production: a function's disk can't keep files |
 | `GUEST_SESSION_SECRET` | Random, Sensitive | Signs the guests' table cookies. Changing it moves every phone to a fresh session at its table |
 | `DEMO_STAFF_PASSWORD` | Optional, Sensitive, production only | The demo accounts' starting password (see [Demo data](#demo-data)). Safe to delete once the demo venue exists |
+| `OPERATOR_TOKEN` | Random, Sensitive, production only | Unlocks `/api/operator` for the team's `--live` commands. Without it that part of the API doesn't exist |
 
 Sensitive values can't be read back, not even by the project's owners. Previews deploy from other branches behind Vercel sign-in.
 
-A real venue: copy the direct connection string from the Neon dashboard (Vercel → Storage → urdho → Open in Neon), then run `pnpm venue:create` with it as `DATABASE_URL`. The owner's temporary password is printed once; they choose their own at first sign-in.
+### Team commands on the live site
+
+The pilot is run from the command line, with `--live`. Those commands call `/api/operator` on the live site with the key in `.env.operator` (git-ignored, on the machine that set up the deploy), so no database password ever leaves Vercel:
+
+```
+URDHO_URL=https://urdho.vercel.app
+URDHO_OPERATOR_TOKEN=<the same value as OPERATOR_TOKEN on the Vercel project>
+```
+
+- A new pilot venue: `pnpm venue:create --live --name "Bar Kalaja" --slug bar-kalaja --owner-name "Full Name" --owner-email owner@example.com --tables 10`. It prints the owner's temporary password once (they choose their own at first sign-in) and the sign-in and table addresses. The owner then sets the menu, photos and opening hours, and prints the table cards under QR codes. Print them from the final domain: each code contains the address it was printed from.
+- How the pilot is going: `pnpm pilot:stats --live` (last 14 days; `--days 30` for more). Per venue: orders and their value, tables served and orders per table, waiter calls, bills paid in cash and by card (the card share matters for the bank talks), and on how many open days guests ordered, which is the Phase 2 gate. Late-night orders count towards the evening they belong to (service days end at 04:00).
+
+To revoke the key, change `OPERATOR_TOKEN` on Vercel and redeploy; put the new value in `.env.operator`. Without `--live`, both commands work on the database in `.env`.
 
 ## API
 
@@ -108,6 +122,13 @@ Guests address the API through their table's QR code, `/api/guest/:slug/t/:qrTok
 | `POST …/orders` | `{ clientRef, guestName, note, lines: [{ itemId, qty, optionIds }] }`; the server prices it. A repeated `clientRef` returns the first order |
 | `GET …/orders/:id` | The order's status and lines, with the table's running bill. Once the table is paid: `session_closed` |
 | `POST …/calls` | Call the waiter; repeat taps don't ring again |
+
+The team's tools, with `Authorization: Bearer <OPERATOR_TOKEN>` (see [Team commands](#team-commands-on-the-live-site)):
+
+| Route | What |
+| --- | --- |
+| `POST /api/operator/venues` | `{ name, slug, ownerName, ownerEmail, tables }`: a venue, its tables and its owner with a temporary password |
+| `GET /api/operator/stats?days=14` | Pilot numbers for every venue |
 
 Everyone who scans a table shares one session until staff take payment or close it. The guest cookie is limited to that table's address, so a phone that scanned two tables can't order to the wrong one. Orders are refused outside the venue's opening hours (its own time zone; a venue with no hours set is always open), when a dish has sold out since the guest opened it (`menu_changed`), when option rules are broken, and after 10 orders from one table in 10 minutes. An empty session closes itself after two hours.
 

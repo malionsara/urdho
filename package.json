@@ -26,7 +26,8 @@
     "db:seed": "tsx server/db/seed.ts",
     "db:reset": "tsx server/db/reset.ts",
     "db:studio": "drizzle-kit studio",
-    "venue:create": "tsx server/scripts/create-venue.ts"
+    "venue:create": "tsx server/scripts/create-venue.ts",
+    "pilot:stats": "tsx server/scripts/pilot-stats.ts"
   },
   "dependencies": {
     "@fontsource-variable/bricolage-grotesque": "^5.3.0",

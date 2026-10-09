@@ -20,10 +20,10 @@ interface CallOptions {
 }
 
 /** The API against the test database, called in-process the way the browser would call it. */
-export function testApi(db: Db) {
+export function testApi(db: Db, { operatorToken }: { operatorToken?: string } = {}) {
   // Uploaded photos land in a throwaway folder.
   const uploadDir = mkdtempSync(join(tmpdir(), 'urdho-uploads-'));
-  const app = createApp({ db, storage: diskStorage(uploadDir, '/uploads'), guestSecret: 'test-guest-secret' });
+  const app = createApp({ db, storage: diskStorage(uploadDir, '/uploads'), guestSecret: 'test-guest-secret', operatorToken });
 
   async function call(method: string, path: string, { body, cookie, headers = {} }: CallOptions = {}) {
     const requestHeaders: Record<string, string> = {

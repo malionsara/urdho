@@ -1,75 +1,80 @@
 import { parseArgs } from 'node:util';
-import { z } from 'zod';
-import { hashPassword, newQrToken, temporaryPassword } from '../auth/crypto';
+import { newVenueInput } from '../../shared/schemas';
 import { createDb } from '../db/client';
-import { diningTable, staffUser, venue } from '../db/schema';
 import { requireEnv } from '../env';
-import { isUniqueViolation } from '../http';
+import { ApiError } from '../http';
+import { createVenueWithOwner, type CreatedVenue } from '../repos/operator';
+import { callLive, liveTarget, OperatorError } from './live';
 
 /*
  * Creates a pilot venue, its tables and its owner, and prints the owner's temporary password once.
  *
  *   pnpm venue:create --name "Tavë & Raki" --slug tave-raki --owner-name "Arta Hoxha" --owner-email arta@example.com --tables 8
+ *
+ * Add --live to create it on the live site (through /api/operator, with the key in .env.operator);
+ * without it, the venue goes into the database in .env.
  */
 
-const args = z
-  .object({
-    name: z.string().trim().min(1).max(80),
-    slug: z.string().regex(/^[a-z0-9]+(-[a-z0-9]+)*$/, 'lowercase letters, digits and single hyphens, e.g. tave-raki'),
-    'owner-name': z.string().trim().min(1).max(80),
-    'owner-email': z.string().trim().toLowerCase().pipe(z.email()),
-    tables: z.coerce.number().int().min(1).max(200).default(6),
-  })
-  .safeParse(
-    parseArgs({
-      options: {
-        name: { type: 'string' },
-        slug: { type: 'string' },
-        'owner-name': { type: 'string' },
-        'owner-email': { type: 'string' },
-        tables: { type: 'string' },
-      },
-    }).values,
-  );
+const { values } = parseArgs({
+  options: {
+    name: { type: 'string' },
+    slug: { type: 'string' },
+    'owner-name': { type: 'string' },
+    'owner-email': { type: 'string' },
+    tables: { type: 'string' },
+    live: { type: 'boolean', default: false },
+  },
+});
 
-if (!args.success) {
-  console.error('Usage: pnpm venue:create --name "Venue name" --slug venue-name --owner-name "Full Name" --owner-email owner@example.com [--tables 6]\n');
-  for (const issue of args.error.issues) console.error(`  --${issue.path.join('.')}: ${issue.message}`);
+const parsed = newVenueInput.safeParse({
+  name: values.name,
+  slug: values.slug,
+  ownerName: values['owner-name'],
+  ownerEmail: values['owner-email'],
+  tables: values.tables,
+});
+
+if (!parsed.success) {
+  console.error('Usage: pnpm venue:create --name "Venue name" --slug venue-name --owner-name "Full Name" --owner-email owner@example.com [--tables 6] [--live]\n');
+  const flag: Record<string, string> = { ownerName: 'owner-name', ownerEmail: 'owner-email' };
+  for (const issue of parsed.error.issues) console.error(`  --${flag[String(issue.path[0])] ?? issue.path.join('.')}: ${issue.message}`);
   process.exit(1);
 }
+const input = parsed.data;
 
-const { name, slug, tables } = args.data;
-const ownerName = args.data['owner-name'];
-const ownerEmail = args.data['owner-email'];
-const password = temporaryPassword();
-const { db, pool } = createDb(requireEnv('DATABASE_URL'));
+const MESSAGES: Record<string, string> = {
+  slug_taken: `the address "${input.slug}" belongs to another venue`,
+  email_taken: `${input.ownerEmail} already has an account`,
+  slug_or_email_taken: 'the address or the email was taken a moment ago',
+  unauthorized: 'the key in .env.operator is not the one on the live site',
+  not_found: 'the live site has no OPERATOR_TOKEN set',
+};
+
+async function create(): Promise<{ created: CreatedVenue; site: string }> {
+  if (values.live) {
+    return { created: await callLive<CreatedVenue>('POST', '/venues', input), site: liveTarget().url };
+  }
+  const { db, pool } = createDb(requireEnv('DATABASE_URL'));
+  try {
+    return { created: await createVenueWithOwner(db, input), site: 'http://localhost:5173' };
+  } finally {
+    await pool.end();
+  }
+}
 
 try {
-  await db.transaction(async (tx) => {
-    const [created] = await tx
-      .insert(venue)
-      .values({
-        name,
-        slug,
-        openingHours: [0, 1, 2, 3, 4, 5, 6].map((day) => ({ day, open: true, from: '08:00', to: '23:00' })),
-      })
-      .returning({ id: venue.id });
-    const venueId = created!.id;
-    await tx.insert(diningTable).values(Array.from({ length: tables }, (_, i) => ({ venueId, number: i + 1, qrToken: newQrToken() })));
-    await tx.insert(staffUser).values({ venueId, name: ownerName, email: ownerEmail, role: 'owner', passwordHash: await hashPassword(password), mustChangePassword: true });
-  });
-
-  console.log(`\nCreated "${name}" (${slug}) with ${tables} tables.\n`);
-  console.log(`Owner:              ${ownerName} <${ownerEmail}>`);
-  console.log(`Temporary password: ${password}`);
-  console.log('\nGive the password to the owner. They choose their own at first sign-in; it is not shown again.\n');
+  const { created, site } = await create();
+  const { venue, owner, tables } = created;
+  console.log(`\nCreated "${venue.name}" with ${tables.length} tables${values.live ? ' on the live site' : ''}.\n`);
+  console.log(`Owner:              ${owner.name} <${owner.email}>`);
+  console.log(`Temporary password: ${owner.temporaryPassword}`);
+  console.log(`Sign-in:            ${site}/staff`);
+  console.log(`Table 1 address:    ${site}/${venue.slug}/t/${tables[0]!.qrToken}`);
+  console.log('\nGive the password to the owner; it is not shown again. They choose their own at first sign-in,');
+  console.log('then set the menu, photos and opening hours, and print the table cards under QR codes.\n');
 } catch (error) {
-  if (isUniqueViolation(error)) {
-    console.error(`\nNot created: the slug "${slug}" or the email ${ownerEmail} is already in use.\n`);
-    process.exitCode = 1;
-  } else {
-    throw error;
-  }
-} finally {
-  await pool.end();
+  const code = error instanceof OperatorError || error instanceof ApiError ? error.code : null;
+  if (!code) throw error;
+  console.error(`\nNot created: ${MESSAGES[code] ?? code}.\n`);
+  process.exitCode = 1;
 }

@@ -24,6 +24,7 @@
 - Errors are `{ error: { code } }` with an HTTP status, raised as `ApiError`. Another venue's row is a 404, never a 403.
 - Guest routes live under `/api/guest/:slug/t/:qrToken` (server/routes/guest.ts). The table comes from that address; everything except `scan` needs the table-session cookie, which a test checks for every guest route.
 - Payments only go through `PaymentProvider` (server/payments/provider.ts); routes never write the payment table directly.
+- Team tools live under `/api/operator` (server/routes/operator.ts, server/repos/operator.ts): the only code that reads across venues. Every request needs `Authorization: Bearer <OPERATOR_TOKEN>`; without the variable the section answers 404. A test checks every operator route refuses a missing or wrong key.
 - Type packages (@types/*) for anything above.
 
 ## Layout
