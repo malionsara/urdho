@@ -5,9 +5,10 @@
   "buildCommand": "pnpm deploy:build",
   "outputDirectory": "dist",
   "regions": ["fra1"],
+  "crons": [{ "path": "/api/cron/daily-summary", "schedule": "0 7 * * *" }],
   "redirects": [
     {
-      "source": "/:path((?!sw\\.js$|sw-old-address\\.js$|workbox-[^/]+\\.js$).*)",
+      "source": "/:path((?!sw\\.js$|sw-old-address\\.js$|workbox-[^/]+\\.js$|api/cron/).*)",
       "has": [{ "type": "host", "value": "urdho.vercel.app" }],
       "destination": "https://urdho.al/:path",
       "permanent": true

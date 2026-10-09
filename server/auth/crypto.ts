@@ -49,6 +49,14 @@ export const newSessionToken = () => randomBytes(32).toString('base64url');
 
 export const sha256 = (value: string) => createHash('sha256').update(value).digest('hex');
 
+/** Whether a key someone sent matches ours. Compares hashes, which are always the same length, in constant time. */
+export function sameSecret(given: string, expected: string): boolean {
+  return timingSafeEqual(Buffer.from(sha256(given), 'hex'), Buffer.from(sha256(expected), 'hex'));
+}
+
+/** The key in an `Authorization: Bearer …` header, if any. */
+export const bearerToken = (header: string | undefined) => header?.match(/^Bearer (.+)$/)?.[1];
+
 /**
  * A table session's guest token. Derived from the session id with a server secret, so every guest
  * who scans the same table gets the same token while only its hash is stored.

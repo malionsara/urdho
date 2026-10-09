@@ -1,5 +1,5 @@
 import { attachDatabasePool, waitUntil } from '@vercel/functions';
-import { serverErrorAlerts, telegramConfig } from './alerts';
+import { sendTelegram, serverErrorAlerts, telegramConfig } from './alerts';
 import { createApp } from './app';
 import { getDatabase } from './db/default';
 import { requireEnv } from './env';
@@ -16,13 +16,17 @@ attachDatabasePool(pool);
 
 // Photos must go to Vercel Blob here: a function's disk is read-only and forgets everything.
 const storage = blobStorage(requireEnv('BLOB_READ_WRITE_TOKEN'));
+const telegram = telegramConfig();
 const app = createApp({
   db,
   storage,
   guestSecret: requireEnv('GUEST_SESSION_SECRET'),
   operatorToken: process.env.OPERATOR_TOKEN || undefined,
   // Bugs go to the team's Telegram (TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID); waitUntil sends after the response.
-  onUnexpectedError: serverErrorAlerts(telegramConfig(), { defer: waitUntil }),
+  onUnexpectedError: serverErrorAlerts(telegram, { defer: waitUntil }),
+  // The morning summary (vercel.json "crons"), which Vercel calls with CRON_SECRET.
+  cronSecret: process.env.CRON_SECRET || undefined,
+  notify: telegram && ((text) => sendTelegram(telegram, text)),
 });
 
 export default { fetch: (request: Request) => app.fetch(request) };

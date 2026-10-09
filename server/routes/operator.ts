@@ -1,9 +1,8 @@
-import { timingSafeEqual } from 'node:crypto';
 import { Hono } from 'hono';
 import { createMiddleware } from 'hono/factory';
 import { z } from 'zod';
 import { newVenueInput, staffPasswordResetInput } from '../../shared/schemas';
-import { sha256 } from '../auth/crypto';
+import { bearerToken, sameSecret } from '../auth/crypto';
 import type { Db } from '../db/client';
 import { notFound, readJson, unauthorized } from '../http';
 import { createVenueWithOwner, pilotStats, prepareHealthCheck, resetStaffPassword } from '../repos/operator';
@@ -14,11 +13,6 @@ import { createVenueWithOwner, pilotStats, prepareHealthCheck, resetStaffPasswor
  * on the server, the whole section answers 404, as if it didn't exist.
  */
 
-/** Compares the keys' hashes, which are always the same length, in constant time. */
-function sameToken(given: string, expected: string): boolean {
-  return timingSafeEqual(Buffer.from(sha256(given), 'hex'), Buffer.from(sha256(expected), 'hex'));
-}
-
 export function operatorRoutes(db: Db, token: string | undefined) {
   const routes = new Hono();
 
@@ -26,8 +20,8 @@ export function operatorRoutes(db: Db, token: string | undefined) {
     '*',
     createMiddleware(async (c, next) => {
       if (!token) throw notFound();
-      const given = c.req.header('authorization')?.match(/^Bearer (.+)$/)?.[1];
-      if (!given || !sameToken(given, token)) throw unauthorized();
+      const given = bearerToken(c.req.header('authorization'));
+      if (!given || !sameSecret(given, token)) throw unauthorized();
       await next();
     }),
   );

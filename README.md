@@ -66,7 +66,8 @@ Settings on the Vercel project:
 | `GUEST_SESSION_SECRET` | Random, Sensitive | Signs the guests' table cookies. Changing it moves every phone to a fresh session at its table |
 | `DEMO_STAFF_PASSWORD` | Optional, Sensitive, production only | The demo accounts' starting password (see [Demo data](#demo-data)). Safe to delete once the demo venue exists |
 | `OPERATOR_TOKEN` | Random, Sensitive, production only | Unlocks `/api/operator` for the team's `--live` commands. Without it that part of the API doesn't exist |
-| `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID` | Sensitive, production only | Where server errors are reported (see [Alerts](#alerts)). Without them nothing is sent |
+| `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID` | Sensitive, production only | Where server errors and the morning summary go (see [Alerts](#alerts)). Without them nothing is sent |
+| `CRON_SECRET` | Random, Sensitive, production only | Vercel sends it with each scheduled job; unlocks `/api/cron`. Without it that part of the API doesn't exist |
 
 Sensitive values can't be read back, not even by the project's owners. Previews deploy from other branches behind Vercel sign-in.
 
@@ -92,12 +93,14 @@ To revoke the key, change `OPERATOR_TOKEN` on Vercel and redeploy; put the new v
 
 ### Alerts
 
-Two things reach the team's Telegram chat, through a bot:
+Three things reach the team's Telegram chat, through a bot:
 
 - **A bug on the live site:** any request the API answers with 500 (`server/alerts.ts`, wired in `server/vercel.ts`). The message names the route by its pattern (`POST /api/guest/:slug/t/:qrToken/orders`) and the error in one line; a failed database query is reported by the database's own message, never the values it was given, so no guest's name or note leaves the server. The same error on the same route is reported at most once every 15 minutes. Needs `TELEGRAM_BOT_TOKEN` and `TELEGRAM_CHAT_ID` on the Vercel project.
 - **A failed health check:** `.github/workflows/health-check.yml` runs `pnpm smoke --live` every hour from 10:00 to 01:00 Albanian summer time (09:00 to 00:00 in winter), after every production deploy, and on demand (Actions → Health check → Run workflow). A failure is posted with the step and the server's answer, and GitHub emails the repository's owner too. Needs the repository secrets `URDHO_OPERATOR_TOKEN`, `TELEGRAM_BOT_TOKEN` and `TELEGRAM_CHAT_ID`. About 500 minutes of GitHub Actions a month, inside the free 2,000.
 
-Setting it up: in Telegram, ask @BotFather for `/newbot` and copy its token; open the new bot and press Start (or add it to a team group). Put `TELEGRAM_BOT_TOKEN=…` in `.env.operator` and run `pnpm alerts:test`: it lists the chats that wrote to the bot. Add the right one as `TELEGRAM_CHAT_ID=…` and run it again for a test message. Then copy both values to the Vercel project (Production, Sensitive; redeploy) and to the GitHub repository's Actions secrets, with `URDHO_OPERATOR_TOKEN`.
+- **The morning summary:** every day between 09:00 and 10:00 Albanian time (Vercel's daily job, `vercel.json` `crons`, calls `/api/cron/daily-summary` with `CRON_SECRET`), yesterday's service at each venue: orders, value, tables, waiter calls and what was paid in cash and by card, busiest first, then the venues that were open but had no orders, which is the pilot's warning sign. Built from the same numbers as `pnpm pilot:stats` (`server/summary.ts`), without the health check's venue. Needs `CRON_SECRET` and the two Telegram variables on Vercel; to send one now, use Run on the project's Settings → Cron Jobs page. `/api/cron/` is exempt from the old address's redirect, since scheduled jobs don't follow redirects.
+
+Setting it up: in Telegram, ask @BotFather for `/newbot` and copy its token; open the new bot and press Start (or add it to a team group). Put `TELEGRAM_BOT_TOKEN=…` in `.env.operator` and run `pnpm alerts:test`: it lists the chats that wrote to the bot. Add the right one as `TELEGRAM_CHAT_ID=…` and run it again for a test message. Then copy both values, and a new random `CRON_SECRET`, to the Vercel project (Production, Sensitive; redeploy) and to the GitHub repository's Actions secrets, with `URDHO_OPERATOR_TOKEN`.
 
 ## API
 

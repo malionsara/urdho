@@ -1,7 +1,7 @@
 import { mkdtempSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { createApp } from '../app';
+import { createApp, type AppOptions } from '../app';
 import { hashPassword } from '../auth/crypto';
 import { staffUser } from '../db/schema';
 import { diskStorage } from '../photos';
@@ -20,10 +20,10 @@ interface CallOptions {
 }
 
 /** The API against the test database, called in-process the way the browser would call it. */
-export function testApi(db: Db, { operatorToken }: { operatorToken?: string } = {}) {
+export function testApi(db: Db, options: Omit<Partial<AppOptions>, 'db' | 'storage' | 'guestSecret'> = {}) {
   // Uploaded photos land in a throwaway folder.
   const uploadDir = mkdtempSync(join(tmpdir(), 'urdho-uploads-'));
-  const app = createApp({ db, storage: diskStorage(uploadDir, '/uploads'), guestSecret: 'test-guest-secret', operatorToken });
+  const app = createApp({ db, storage: diskStorage(uploadDir, '/uploads'), guestSecret: 'test-guest-secret', ...options });
 
   async function call(method: string, path: string, { body, cookie, headers = {} }: CallOptions = {}) {
     const requestHeaders: Record<string, string> = {

@@ -5,6 +5,7 @@ import type { ServerErrorAlert } from './alerts';
 import { errorHandler, type AppEnv } from './http';
 import { cashProvider, type PaymentProvider } from './payments/provider';
 import type { PhotoStorage } from './photos';
+import { cronRoutes } from './routes/cron';
 import { guestRoutes } from './routes/guest';
 import { menuRoutes } from './routes/menu';
 import { operatorRoutes } from './routes/operator';
@@ -14,7 +15,7 @@ import { teamRoutes } from './routes/team';
 import { uploadRoutes } from './routes/uploads';
 import { venueSettingsRoutes } from './routes/venueSettings';
 
-interface AppOptions {
+export interface AppOptions {
   db: Db;
   storage: PhotoStorage;
   /** Signs guest session tokens; GUEST_SESSION_SECRET in the environment. */
@@ -24,10 +25,14 @@ interface AppOptions {
   operatorToken?: string;
   /** Told about every unexpected error (a bug, answered 500): the live site sends it to Telegram. */
   onUnexpectedError?: ServerErrorAlert;
+  /** Unlocks /api/cron (CRON_SECRET, sent by Vercel's scheduled jobs); without it that section doesn't exist. */
+  cronSecret?: string;
+  /** Delivers the scheduled reports to the team (Telegram on the live site). */
+  notify?: (text: string) => Promise<boolean>;
 }
 
 /** The whole API. Its dependencies are passed in, so tests can use their own. */
-export function createApp({ db, storage, guestSecret, payments = cashProvider, operatorToken, onUnexpectedError }: AppOptions) {
+export function createApp({ db, storage, guestSecret, payments = cashProvider, operatorToken, onUnexpectedError, cronSecret, notify }: AppOptions) {
   const app = new Hono<AppEnv>().basePath('/api');
 
   // Refuses form posts from other sites; the API itself only accepts JSON and photo uploads.
@@ -49,6 +54,7 @@ export function createApp({ db, storage, guestSecret, payments = cashProvider, o
   app.route('/staff', serviceRoutes(db, payments));
   app.route('/guest/:slug/t/:qrToken', guestRoutes(db, guestSecret));
   app.route('/operator', operatorRoutes(db, operatorToken));
+  app.route('/cron', cronRoutes(db, { secret: cronSecret, notify }));
 
   app.notFound((c) => c.json({ error: { code: 'not_found' } }, 404));
   // The route's pattern (/api/guest/:slug/t/:qrToken/orders), never the address itself with its codes and ids.
