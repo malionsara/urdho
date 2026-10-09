@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router';
 import i18n from '../i18n';
 import buttons from '../ui/Button.module.css';
+import { Flag } from '../ui/Flag';
 import { Icon, type IconName } from '../ui/Icon';
 import { KilimBand, KilimDiamond } from '../ui/Kilim';
 import { contactLinks } from './contact';
@@ -85,10 +86,10 @@ export function Landing() {
           </a>
           <div className={styles.navEnd}>
             <LanguageToggle />
-            <Link to="/staff" className={cx(styles.navLink, styles.navSignIn)}>
+            <Link to="/staff" className={cx(buttons.button, styles.onInk, styles.navButton, styles.navSignIn)}>
               {t('landing.nav.signIn')}
             </Link>
-            <a href="#contact" className={cx(buttons.button, buttons.primary, styles.navCta)}>
+            <a href="#contact" className={cx(buttons.button, buttons.primary, styles.navButton, styles.navCta)}>
               {t('landing.nav.contact')}
             </a>
           </div>
@@ -293,6 +294,7 @@ function LanguageToggle() {
     <div className={styles.lang} role="group" aria-label={t('language.label')}>
       {(['sq', 'en'] as const).map((code) => (
         <button key={code} type="button" lang={code} aria-pressed={code === current} aria-label={t(`language.${code}`)} onClick={() => choose(code)}>
+          <Flag lang={code} />
           {code.toUpperCase()}
         </button>
       ))}

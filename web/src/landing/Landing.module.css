@@ -101,30 +101,32 @@
   text-underline-offset: 4px;
 }
 
-.navSignIn {
-  display: none;
-}
-
-.navCta {
-  display: none;
+/* The header's three controls share one height and one outline. */
+.navButton {
   min-height: 42px;
   padding: 0 var(--space-4);
   font-size: var(--text-sm);
   box-shadow: none;
 }
 
+.navSignIn,
+.navCta {
+  display: none;
+}
+
 .lang {
   display: inline-flex;
-  padding: 3px;
-  border: 1px solid rgb(255 255 255 / 0.14);
+  padding: 2px;
+  border: 2px solid rgb(255 255 255 / 0.28);
   border-radius: var(--radius-pill);
-  background: rgb(255 255 255 / 0.06);
 }
 
 .lang button {
-  min-width: 42px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   min-height: 34px;
-  padding: 0 10px;
+  padding: 0 12px 0 8px;
   border: 0;
   border-radius: var(--radius-pill);
   background: transparent;
@@ -246,7 +248,7 @@
 
 @media (min-width: 560px) {
   .navSignIn {
-    display: inline;
+    display: inline-flex;
   }
 
   .actions a {
