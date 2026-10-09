@@ -1,0 +1,4 @@
+# The front page is public; the dashboard and the API are not for search engines.
+User-agent: *
+Disallow: /staff
+Disallow: /api/

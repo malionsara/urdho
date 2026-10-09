@@ -1,0 +1,136 @@
+{
+  "title": "Urdho · Porosi me QR për restorante",
+  "nav": {
+    "signIn": "Hyrje për stafin",
+    "contact": "Na shkruani"
+  },
+  "hero": {
+    "eyebrow": "Për restorante, kafene dhe bare plazhi",
+    "title": "Klientët porosisin nga tavolina.",
+    "titleAccent": "Ju shërbeni më shpejt.",
+    "lead": "Kodi QR në tavolinë hap menunë tuaj në telefonin e klientit. Porosia del menjëherë në ekranin e kuzhinës, dhe klienti paguan në fund si gjithmonë: me para në dorë ose me kartë.",
+    "cta": "Bëhuni pjesë e pilotit",
+    "secondary": "Si funksionon",
+    "point1": "Pa komision",
+    "point2": "Pa aplikacion për klientët",
+    "point3": "Shqip dhe anglisht"
+  },
+  "values": {
+    "commission": {
+      "title": "Pa komision",
+      "body": "Një çmim fiks në muaj. Asnjë përqindje nga porositë tuaja, sado shumë të jenë."
+    },
+    "pay": {
+      "title": "Pagesa mbetet si sot",
+      "body": "Klienti paguan në fund, me para në dorë ose me kartë në POS-in tuaj. Kamarieri e mbyll faturën me një prekje."
+    },
+    "devices": {
+      "title": "Pa pajisje të reja",
+      "body": "Një tablet, telefon ose kompjuter për porositë, dhe kodet e printuara në tavolina. Kaq."
+    }
+  },
+  "how": {
+    "eyebrow": "Si funksionon",
+    "title": "Tre hapa. Asgjë për të shkarkuar.",
+    "step1": {
+      "title": "Skanon kodin",
+      "body": "Çdo tavolinë ka kodin e vet. Kamera e telefonit hap menunë tuaj me foto, në shqip ose në anglisht.",
+      "alt": "Menuja e restorantit në telefon, me foto dhe çmime"
+    },
+    "step2": {
+      "title": "Zgjedh dhe porosit",
+      "body": "Përshkrime, alergjenë dhe zgjedhje si porcioni ose garnitura. Çmimi del gjithmonë sipas menusë suaj.",
+      "alt": "Një pjatë me zgjedhjet e saj, gati për në shportë"
+    },
+    "step3": {
+      "title": "Ndjek porosinë, paguan në fund",
+      "body": "Klienti sheh kur kuzhina e merr dhe e përgatit porosinë, dhe sa është fatura e tavolinës deri tani.",
+      "alt": "Porosia në përgatitje dhe fatura e tavolinës në telefon"
+    }
+  },
+  "board": {
+    "eyebrow": "Për stafin",
+    "title": "I gjithë shërbimi në një ekran",
+    "lead": "Paneli hapet në çdo tablet ose kompjuter. Porositë dhe thirrjet vijnë live me zile: pa printer, pa fletë letre.",
+    "alt": "Paneli i porosive: porosi të reja, në përgatitje dhe të shërbyera, dhe një tavolinë që thërret kamarierin",
+    "live": {
+      "title": "Porositë live, me zile",
+      "body": "Çdo porosi e re del në ekran me zile. Një prekje e kalon në përgatitje, një tjetër në të shërbyer."
+    },
+    "call": {
+      "title": "Thirrje për kamarierin",
+      "body": "Klienti thërret nga telefoni. Tavolina qëndron në krye të ekranit derisa dikush të prekë “Po vij”."
+    },
+    "menu": {
+      "title": "Menuja juaj, në sekonda",
+      "body": "Ndryshoni vetë çmime, foto dhe pjata. Mbaroi diçka? Shënojeni të mbaruar dhe klientët e shohin menjëherë."
+    },
+    "bill": {
+      "title": "Fatura e çdo tavoline",
+      "body": "Shihni çfarë ka porositur secila tavolinë dhe mbylleni faturën kur klienti paguan."
+    },
+    "languages": {
+      "title": "Shqip dhe anglisht",
+      "body": "Menuja dhe ekranet në të dyja gjuhët, për klientët vendas dhe për turistët."
+    },
+    "brand": {
+      "title": "Me pamjen e lokalit tuaj",
+      "body": "Ngjyra, logoja dhe fotoja juaj në menu. Kartat QR të tavolinave i printoni vetë nga paneli."
+    }
+  },
+  "pilot": {
+    "eyebrow": "Programi pilot",
+    "title": "Kërkojmë restorantet e para",
+    "body": "Po e nisim me pak lokale, që Urdho të përshtatet me mënyrën si punoni ju. Ju ndihmojmë të hidhni menunë dhe të nisni me stafin.",
+    "priceLabel": "Çmimi gjatë pilotit",
+    "price": "[Çmimi]",
+    "priceNote": "Çmim fiks në muaj, pa komision mbi porositë.",
+    "includesTitle": "Përfshihen",
+    "include1": "Menuja me foto, në shqip dhe në anglisht",
+    "include2": "Një kod QR për çdo tavolinë",
+    "include3": "Paneli për kuzhinën, banakun dhe kamarierët",
+    "include4": "Ndihmë direkte në WhatsApp"
+  },
+  "faq": {
+    "title": "Pyetje që bëjnë pronarët",
+    "app": {
+      "q": "A duhet të shkarkojnë klientët ndonjë aplikacion?",
+      "a": "Jo. Menuja hapet në shfletuesin e telefonit sapo skanojnë kodin."
+    },
+    "pay": {
+      "q": "Si paguajnë klientët?",
+      "a": "Si sot: në fund, me para në dorë ose me kartë në POS-in tuaj. Kamarieri e shënon faturën të paguar në panel."
+    },
+    "need": {
+      "q": "Çfarë më duhet për të filluar?",
+      "a": "Internet, një tablet, telefon ose kompjuter për panelin, dhe kodet QR të printuara në tavolina."
+    },
+    "commission": {
+      "q": "A merrni përqindje nga porositë?",
+      "a": "Jo. Paguani një çmim fiks në muaj, sado porosi të keni."
+    },
+    "soldOut": {
+      "q": "Po nëse mbaron një pjatë gjatë shërbimit?",
+      "a": "E shënoni të mbaruar me një prekje. Klientët e shohin menjëherë dhe nuk mund ta porosisin."
+    },
+    "menu": {
+      "q": "Kush e hedh menunë?",
+      "a": "Ju, nga paneli, me foto, çmime dhe zgjedhje. Gjatë pilotit ju ndihmojmë ne."
+    }
+  },
+  "final": {
+    "title": "Le ta provojmë në lokalin tuaj.",
+    "body": "Na shkruani dhe ju tregojmë si do të funksiononte në lokalin tuaj."
+  },
+  "contact": {
+    "whatsapp": "Na shkruani në WhatsApp",
+    "email": "Dërgoni email",
+    "message": "Përshëndetje! Dua të di më shumë për Urdho për lokalin tim.",
+    "subject": "Urdho për lokalin tim",
+    "placeholder": "mungon kontakti"
+  },
+  "footer": {
+    "rights": "© {{year}} Urdho",
+    "signIn": "Hyrje për stafin"
+  }
+}

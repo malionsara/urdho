@@ -7,7 +7,7 @@ import { Icon, type IconName } from './ui/Icon';
 import { KilimBand } from './ui/Kilim';
 import styles from './DevIndex.module.css';
 
-/** Design-review hub on the dev server: every screen and state one tap away. Production shows Home. */
+/** Design-review hub on the dev server: every screen and state one tap away. Production shows the front page (landing/). */
 const GUEST_LINKS: { key: string; to: string; icon: IconName; swatch?: string }[] = [
   { key: 'menu', to: '/demo/t/demo-4?brand=reset&slow=0', icon: 'qr', swatch: '#C8432A' },
   { key: 'green', to: '/demo/t/demo-4?brand=1F5E45&slow=0', icon: 'qr', swatch: '#1F5E45' },
@@ -20,6 +20,8 @@ const GUEST_LINKS: { key: string; to: string; icon: IconName; swatch?: string }[
 const STAFF_LINKS: { key: string; to: string; icon: IconName }[] = [
   { key: 'staff', to: '/staff', icon: 'receipt' },
 ];
+
+const SITE_LINKS: { key: string; to: string; icon: IconName }[] = [{ key: 'landing', to: '/landing', icon: 'globe' }];
 
 export function DevIndex() {
   const { t } = useTranslation();
@@ -45,6 +47,8 @@ export function DevIndex() {
         <p className={styles.eyebrow}>Urdho</p>
         <h1 className={styles.title}>{t('dev.title')}</h1>
         <p className={styles.lead}>{t('dev.lead')}</p>
+
+        <LinkList links={SITE_LINKS} />
 
         <h2 className={styles.groupTitle}>{t('dev.guestGroup')}</h2>
         <LinkList links={GUEST_LINKS} />

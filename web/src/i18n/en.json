@@ -203,6 +203,10 @@
       "staff": {
         "title": "Staff dashboard",
         "body": "Sign in as owner, manager or waiter"
+      },
+      "landing": {
+        "title": "Front page",
+        "body": "The page for restaurant owners, as it appears on urdho.al"
       }
     },
     "resetHint": "To start over: pnpm db:reset"
@@ -439,11 +443,5 @@
       "wrongCurrent": "Your current password isn't right.",
       "same": "The new password must be different from the old one."
     }
-  },
-  "home": {
-    "title": "Order from your table",
-    "lead": "Scan the QR code on your table to see the menu and order, with nothing to download.",
-    "staff": "Staff dashboard",
-    "staffBody": "Your venue’s orders, tables and menu"
   }
 }

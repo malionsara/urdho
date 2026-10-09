@@ -38,10 +38,10 @@ export default defineConfig(({ command }) => {
           skipWaiting: true,
           clientsClaim: true,
           // The guest app shell, for fast repeat visits on a weak connection. Fonts: Latin subsets
-          // only. The staff dashboard stays out, so guests' phones never download it; staff devices
-          // cache it the first time it loads (below).
+          // only. The staff dashboard and the front page stay out, so guests' phones never download
+          // them; staff devices cache the dashboard the first time it loads (below).
           globPatterns: ['**/*.{js,css,html,svg,woff2}'],
-          globIgnores: ['**/*{cyrillic,greek,vietnamese}*', '**/StaffApp-*', '**/quick-start.html', '**/sw-old-address.js'],
+          globIgnores: ['**/*{cyrillic,greek,vietnamese}*', '**/StaffApp-*', '**/Landing-*', '**/quick-start.html', '**/sw-old-address.js'],
           // Retires the offline copy on the old urdho.vercel.app address; does nothing anywhere else.
           importScripts: ['sw-old-address.js'],
           navigateFallback: '/index.html',

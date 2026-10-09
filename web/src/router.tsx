@@ -1,7 +1,6 @@
 import { createBrowserRouter, Outlet, ScrollRestoration } from 'react-router';
 import { AppError } from './AppError';
 import { GuestLayout } from './guest/GuestLayout';
-import { Home } from './Home';
 import { useNavMotion } from './lib/motion';
 import { BasketScreen } from './guest/screens/BasketScreen';
 import { CheckoutScreen } from './guest/screens/CheckoutScreen';
@@ -9,6 +8,13 @@ import { ItemScreen } from './guest/screens/ItemScreen';
 import { MenuScreen } from './guest/screens/MenuScreen';
 import { OrderStatusScreen } from './guest/screens/OrderStatusScreen';
 import { NotFound } from './NotFound';
+
+/** The front page for restaurant owners, loaded on its own so guests never download it. */
+const frontPage = {
+  lazy: async () => ({ Component: (await import('./landing/Landing')).Landing }),
+  // While it downloads on a first visit: its dark top, not a white flash.
+  HydrateFallback: () => <div aria-busy="true" style={{ minHeight: '100dvh', background: 'var(--ink)' }} />,
+};
 
 function Root() {
   useNavMotion();
@@ -29,7 +35,9 @@ export const router = createBrowserRouter([
       // production build doesn't even contain it.
       import.meta.env.DEV
         ? { path: '/', lazy: async () => ({ Component: (await import('./DevIndex')).DevIndex }), HydrateFallback: () => null }
-        : { path: '/', element: <Home /> },
+        : { path: '/', ...frontPage },
+      // On the dev server the front page sits one link away from the hub.
+      ...(import.meta.env.DEV ? [{ path: '/landing', ...frontPage }] : []),
       {
         path: '/:slug/t/:qrToken',
         element: <GuestLayout />,

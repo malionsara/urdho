@@ -185,9 +185,18 @@ The staff dashboard is a PWA: in Chrome or Edge use the install button in the ad
 
 Production builds add a service worker (none in `pnpm dev`): it keeps the guest app's shell and fonts and every photo it has shown, so repeat visits load on a weak signal; the dashboard's files are cached the first time a staff device opens it. It never touches `/api`. A new version takes over as soon as it has installed (`skipWaiting`, `clientsClaim`). An open board isn't reloaded, since a reload would silence the chime until someone taps "Start service" again; it runs on until its next load. A device still running an older version that asks for a file the new deploy no longer has (each deploy renames them) moves to the new version by itself (`web/src/lib/updates.ts`, shown on `AppError`); any other failure shows a plain error with a reload button. Service workers need HTTPS, or `localhost`; try one locally with `pnpm build` and `pnpm exec vite preview`.
 
+## Front page
+
+`https://urdho.al/` is the page for restaurant owners (`web/src/landing/`), in Albanian and English with the same language switch as the menu. It explains the guest's three steps and the dashboard, invites owners to the pilot, and answers their usual questions. It's loaded on its own and kept out of the offline cache, so guests scanning a table never download it. On `pnpm dev` it's at `/landing` (the root is the design-review hub).
+
+- **Contact:** the WhatsApp number and email live in `web/src/landing/contact.ts`. Until they're filled in, the buttons carry a dashed outline and "contact missing". The page's texts are in `web/src/landing/sq.json` and `en.json`, loaded with the page rather than with the app; the pilot price is `pilot.price` there.
+- **Screenshots** (`web/src/landing/shots/`) are the real app, taken from the demo venue on the dev server in both languages: the menu, a dish, an order being prepared (phone, 600 px wide WebP) and the orders board and tables (tablet, 800 and 1600 px). Retake them after a visible change to those screens.
+- **Link previews:** `web/index.html` carries the description and Open Graph tags, with `web/public/og.jpg` (1200 × 630) as the picture WhatsApp and Facebook show. `web/public/robots.txt` keeps `/staff` and `/api/` out of search engines.
+
 ## Layout
 
 ```
+web/src/landing Front page for restaurant owners, its screenshots and contact details
 web/src/guest   Guest app: menu, item, basket, checkout, order status
 web/src/staff   Staff dashboard: live board, tables, menu manager, QR cards, staff, settings
 web/src/ui      Design system: buttons, badges, fields, kilim pattern, icons

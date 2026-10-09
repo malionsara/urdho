@@ -203,6 +203,10 @@
       "staff": {
         "title": "Paneli i stafit",
         "body": "Hyni si pronar, menaxher ose kamarier"
+      },
+      "landing": {
+        "title": "Faqja kryesore",
+        "body": "Faqja për pronarët e restoranteve, siç del në urdho.al"
       }
     },
     "resetHint": "Për të filluar nga e para: pnpm db:reset"
@@ -439,11 +443,5 @@
       "wrongCurrent": "Fjalëkalimi aktual nuk është i saktë.",
       "same": "Fjalëkalimi i ri duhet të jetë ndryshe nga i vjetri."
     }
-  },
-  "home": {
-    "title": "Porositni nga tavolina",
-    "lead": "Skanoni kodin QR në tavolinën tuaj për të parë menunë dhe për të porositur, pa shkarkuar asgjë.",
-    "staff": "Paneli i stafit",
-    "staffBody": "Porositë, tavolinat dhe menuja e lokalit tuaj"
   }
 }

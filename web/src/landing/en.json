@@ -1,0 +1,136 @@
+{
+  "title": "Urdho · QR ordering for restaurants",
+  "nav": {
+    "signIn": "Staff sign-in",
+    "contact": "Contact us"
+  },
+  "hero": {
+    "eyebrow": "For restaurants, cafés and beach bars",
+    "title": "Guests order from the table.",
+    "titleAccent": "You serve faster.",
+    "lead": "The QR code on the table opens your menu on the guest's phone. The order lands on your kitchen screen at once, and guests pay at the end as always: cash or card.",
+    "cta": "Join the pilot",
+    "secondary": "How it works",
+    "point1": "No commission",
+    "point2": "No app for guests",
+    "point3": "Albanian and English"
+  },
+  "values": {
+    "commission": {
+      "title": "No commission",
+      "body": "One flat monthly price. No cut of your orders, however many there are."
+    },
+    "pay": {
+      "title": "Payment stays the same",
+      "body": "Guests pay at the end, in cash or by card on your own terminal. The waiter closes the bill with one tap."
+    },
+    "devices": {
+      "title": "No new hardware",
+      "body": "A tablet, phone or computer for the orders, and the codes printed on your tables. That's all."
+    }
+  },
+  "how": {
+    "eyebrow": "How it works",
+    "title": "Three steps. Nothing to download.",
+    "step1": {
+      "title": "Scan the code",
+      "body": "Every table has its own code. The phone camera opens your menu with photos, in Albanian or English.",
+      "alt": "The restaurant's menu on a phone, with photos and prices"
+    },
+    "step2": {
+      "title": "Choose and order",
+      "body": "Descriptions, allergens and choices like portion or side. The price always follows your menu.",
+      "alt": "A dish with its choices, ready to add to the basket"
+    },
+    "step3": {
+      "title": "Follow the order, pay at the end",
+      "body": "Guests see when the kitchen gets and prepares their order, and what the table's bill is so far.",
+      "alt": "The order being prepared and the table's bill on a phone"
+    }
+  },
+  "board": {
+    "eyebrow": "For your staff",
+    "title": "Your whole service on one screen",
+    "lead": "The dashboard opens on any tablet or computer. Orders and waiter calls arrive live with a chime: no printer, no paper slips.",
+    "alt": "The orders dashboard: new, preparing and served orders, and a table calling the waiter",
+    "live": {
+      "title": "Live orders, with a chime",
+      "body": "Every new order appears on screen with a chime. One tap moves it to preparing, another to served."
+    },
+    "call": {
+      "title": "Call the waiter",
+      "body": "Guests call from their phone. The table stays at the top of the screen until someone taps “On my way”."
+    },
+    "menu": {
+      "title": "Your menu, in seconds",
+      "body": "Change prices, photos and dishes yourself. Ran out of something? Mark it sold out and guests see it at once."
+    },
+    "bill": {
+      "title": "Every table's bill",
+      "body": "See what each table has ordered and close the bill when the guests pay."
+    },
+    "languages": {
+      "title": "Albanian and English",
+      "body": "The menu and the screens in both languages, for locals and tourists alike."
+    },
+    "brand": {
+      "title": "Your venue, your look",
+      "body": "Your colour, logo and photo on the menu. Print your tables' QR cards yourself from the dashboard."
+    }
+  },
+  "pilot": {
+    "eyebrow": "Pilot programme",
+    "title": "We're looking for our first restaurants",
+    "body": "We're starting with a few venues, so Urdho fits the way you actually work. We help you put your menu in and get your staff going.",
+    "priceLabel": "Price during the pilot",
+    "price": "[Price]",
+    "priceNote": "A flat monthly price, no commission on orders.",
+    "includesTitle": "Included",
+    "include1": "Your menu with photos, in Albanian and English",
+    "include2": "A QR code for every table",
+    "include3": "The dashboard for kitchen, bar and waiters",
+    "include4": "Direct help on WhatsApp"
+  },
+  "faq": {
+    "title": "Questions owners ask",
+    "app": {
+      "q": "Do guests need to download an app?",
+      "a": "No. The menu opens in the phone's browser as soon as they scan the code."
+    },
+    "pay": {
+      "q": "How do guests pay?",
+      "a": "As they do today: at the end, in cash or by card on your terminal. The waiter marks the bill paid on the dashboard."
+    },
+    "need": {
+      "q": "What do I need to start?",
+      "a": "Internet, a tablet, phone or computer for the dashboard, and the QR codes printed on your tables."
+    },
+    "commission": {
+      "q": "Do you take a cut of orders?",
+      "a": "No. You pay one flat monthly price, however many orders you get."
+    },
+    "soldOut": {
+      "q": "What if a dish runs out during service?",
+      "a": "Mark it sold out with one tap. Guests see it straight away and can't order it."
+    },
+    "menu": {
+      "q": "Who puts the menu in?",
+      "a": "You do, from the dashboard, with photos, prices and choices. During the pilot, we help."
+    }
+  },
+  "final": {
+    "title": "Let's try it at your place.",
+    "body": "Write to us and we'll show you how it would work in your venue."
+  },
+  "contact": {
+    "whatsapp": "Message us on WhatsApp",
+    "email": "Send an email",
+    "message": "Hello! I'd like to know more about Urdho for my venue.",
+    "subject": "Urdho for my venue",
+    "placeholder": "contact missing"
+  },
+  "footer": {
+    "rights": "© {{year}} Urdho",
+    "signIn": "Staff sign-in"
+  }
+}
