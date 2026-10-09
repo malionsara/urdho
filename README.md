@@ -6,7 +6,7 @@ QR ordering for Albanian restaurants: guests scan a code at the table, order fro
 
 All 9 milestones of the MVP plan: the design system, the guest app, the staff dashboard, the PostgreSQL database, the API (staff sign-in, roles and tenancy, menu management with photo uploads, ordering from scan to payment), the screens wired to it with polling, an offline menu and an installable dashboard, and the deploy.
 
-Live at **https://urdho.al** (Vercel, with Neon PostgreSQL and Vercel Blob in Frankfurt). `www.urdho.al` redirects there; `urdho.vercel.app` still works.
+Live at **https://urdho.al** (Vercel, with Neon PostgreSQL and Vercel Blob in Frankfurt). `www.urdho.al` and the old `urdho.vercel.app` redirect there (the old address keeps its offline-worker files, so a device that saved the app there clears it and follows: `web/public/sw-old-address.js`).
 
 An order placed on a phone appears on the board within seconds; status changes on the board, sold-out switches and payment reach the phone the same way.
 

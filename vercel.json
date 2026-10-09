@@ -5,6 +5,14 @@
   "buildCommand": "pnpm deploy:build",
   "outputDirectory": "dist",
   "regions": ["fra1"],
+  "redirects": [
+    {
+      "source": "/:path((?!sw\\.js$|sw-old-address\\.js$|workbox-[^/]+\\.js$).*)",
+      "has": [{ "type": "host", "value": "urdho.vercel.app" }],
+      "destination": "https://urdho.al/:path",
+      "permanent": true
+    }
+  ],
   "rewrites": [
     { "source": "/api/:path*", "destination": "/api" },
     { "source": "/((?!api/|api$|assets/).*)", "destination": "/index.html" }
