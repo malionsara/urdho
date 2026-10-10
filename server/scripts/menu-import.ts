@@ -60,9 +60,12 @@ interface DraftFile {
 }
 
 const slug = values.venue ?? '';
+
+/** Ends the command with a message. Thrown, not process.exit(): on Windows an exit while the
+ * photo and network handles are still closing crashes Node instead of exiting with code 1. */
+class Stop extends Error {}
 const fail = (message: string): never => {
-  console.error(`\n${message}\n`);
-  process.exit(1);
+  throw new Stop(message);
 };
 
 async function venueExists(): Promise<boolean> {
@@ -149,7 +152,9 @@ async function main() {
 }
 
 main().catch((error: unknown) => {
-  if (error instanceof SourceError || error instanceof ClaudeError || error instanceof DraftError) fail(error.message);
-  if (error instanceof OperatorError) fail(`The live site answered ${error.status} ${error.code}${error.details ? `: ${JSON.stringify(error.details).slice(0, 300)}` : ''}`);
-  throw error;
+  const known = error instanceof Stop || error instanceof SourceError || error instanceof ClaudeError || error instanceof DraftError;
+  if (!known && !(error instanceof OperatorError)) throw error;
+  const message = error instanceof OperatorError ? `The live site answered ${error.status} ${error.code}${error.details ? `: ${JSON.stringify(error.details).slice(0, 300)}` : ''}` : error.message;
+  console.error(`\n${message}\n`);
+  process.exitCode = 1;
 });
