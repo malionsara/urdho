@@ -59,6 +59,11 @@ export function useVenueQuery() {
   return useQuery({ queryKey: ['staff', 'venue'], queryFn: api.fetchVenue, retry: shouldRetry });
 }
 
+/** The owner's get-started checklist; other roles never ask for it. */
+export function useSetupQuery(enabled: boolean) {
+  return useQuery({ queryKey: ['staff', 'setup'], queryFn: api.fetchSetup, enabled, retry: shouldRetry });
+}
+
 export function useMenuAdminQuery() {
   return useQuery({ queryKey: ['staff', 'menu'], queryFn: api.fetchMenuAdmin, retry: shouldRetry });
 }

@@ -71,6 +71,25 @@ export interface Venue {
   openingHours: OpeningDay[];
 }
 
+/** The owner's get-started checklist, in order. Most steps tick themselves from the venue's data. */
+export const SETUP_STEPS = ['look', 'hours', 'menu', 'photos', 'staff', 'qr', 'testOrder'] as const;
+export type SetupStep = (typeof SETUP_STEPS)[number];
+/** What the owner ticks by hand: steps the app can't see happen, and putting the list away. */
+export const SETUP_MARKS = ['hours', 'qr', 'dismissed'] as const;
+export type SetupMark = (typeof SETUP_MARKS)[number];
+
+export interface VenueSetup {
+  steps: {
+    key: SetupStep;
+    done: boolean;
+    /** For dish photos: how many of the guests' dishes have one. */
+    progress?: { done: number; total: number };
+    /** For the menu: categories with dishes that guests can't see yet (e.g. just imported). */
+    hiddenCategories?: number;
+  }[];
+  dismissed: boolean;
+}
+
 /** The part of the venue the guest app sees. */
 export type GuestVenue = Pick<Venue, 'id' | 'slug' | 'name' | 'logoUrl' | 'coverUrl' | 'brandColor' | 'languages' | 'defaultLanguage'>;
 

@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { ALLERGENS } from './allergens';
-import { ITEM_TAGS, LANGUAGES, PAYMENT_METHODS, STAFF_ROLES, type Language } from './types';
+import { ITEM_TAGS, LANGUAGES, PAYMENT_METHODS, SETUP_MARKS, STAFF_ROLES, type Language } from './types';
 
 /*
  * Request bodies the API accepts. Unknown fields are dropped, so a body can never smuggle in a
@@ -146,6 +146,9 @@ export const menuImportInput = z.object({
 });
 
 export const availabilityInput = z.object({ available: z.boolean() });
+
+/** Ticks (or unticks) a get-started step the app can't see for itself, or puts the list away. */
+export const setupMarkInput = z.object({ mark: z.enum(SETUP_MARKS), done: z.boolean() });
 
 export const PHOTO_KINDS = ['dish', 'cover', 'logo'] as const;
 export type PhotoKind = (typeof PHOTO_KINDS)[number];

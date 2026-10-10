@@ -214,6 +214,7 @@
   "staff": {
     "nav": {
       "label": "Dashboard",
+      "start": "Start",
       "orders": "Orders",
       "tables": "Tables",
       "menu": "Menu",
@@ -445,6 +446,63 @@
       "mismatch": "The two new passwords don't match.",
       "wrongCurrent": "Your current password isn't right.",
       "same": "The new password must be different from the old one."
+    },
+    "setup": {
+      "title": "Get started",
+      "lead": "A few steps to get your venue ready for its first guests. They tick themselves as you go.",
+      "progress": "{{done}} of {{total}} done",
+      "done": "Done",
+      "toDo": "To do",
+      "undo": "Mark as not done",
+      "dismiss": "Hide this list",
+      "readyTitle": "Ready for your first guests!",
+      "readyBody": "Everything's in place. When the first guest orders, it appears under Orders with a chime.",
+      "readyAction": "Go to Orders",
+      "steps": {
+        "look": {
+          "title": "Your logo and cover photo",
+          "body": "They head the menu your guests see. Pick your colour there too.",
+          "action": "Open settings"
+        },
+        "hours": {
+          "title": "Ordering hours",
+          "body": "Guests can only order within these hours. Check every day, including the days you're closed.",
+          "action": "Open settings",
+          "mark": "The hours are right"
+        },
+        "menu": {
+          "title": "Your menu",
+          "body": "Add your categories and dishes with their prices.",
+          "action": "Open the menu",
+          "whatsapp": "Or send us photos of your menu on WhatsApp and we'll put it in",
+          "whatsappMessage": "Hello! Here's the menu of {{venue}} to put into Urdho.",
+          "hidden_one": "{{count}} category is still hidden from guests: check it and switch it on in the menu.",
+          "hidden_other": "{{count}} categories are still hidden from guests: check them and switch them on in the menu."
+        },
+        "photos": {
+          "title": "Dish photos",
+          "body": "Guests choose more easily when they can see the dish. A phone and daylight are enough.",
+          "action": "Open the menu",
+          "progress": "{{done}} of {{total}} dishes have a photo"
+        },
+        "staff": {
+          "title": "Your staff",
+          "body": "Create accounts for your waiters and manager, so each signs in with their own.",
+          "action": "Open staff"
+        },
+        "qr": {
+          "title": "QR codes on the tables",
+          "body": "Print them and put one on every table. There's a one-page guide for your staff too.",
+          "action": "Open QR codes",
+          "sheet": "Staff guide",
+          "mark": "They're on the tables"
+        },
+        "testOrder": {
+          "title": "A test order",
+          "body": "Scan a code with your phone and order something: it appears under Orders with a chime. Then close it under Tables.",
+          "action": "Open the menu as a guest"
+        }
+      }
     }
   }
 }

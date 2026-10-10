@@ -63,6 +63,8 @@ export const venue = pgTable(
     currency: text('currency').notNull().default('ALL'),
     plan: text('plan').notNull().default('pilot'),
     status: text('status').notNull().default('active'),
+    /** Get-started steps the owner ticked by hand ('hours', 'qr'), and 'dismissed' once the list is put away. */
+    setupMarks: text('setup_marks').array().notNull().default(sql`'{}'::text[]`),
     createdAt: createdAt(),
   },
   (t) => [

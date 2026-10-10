@@ -12,7 +12,7 @@ import { ME_KEY, useMeQuery } from './queries';
  */
 
 export const ROLE_PAGES: Record<StaffRole, string[]> = {
-  owner: ['orders', 'tables', 'menu', 'qr', 'team', 'settings'],
+  owner: ['start', 'orders', 'tables', 'menu', 'qr', 'team', 'settings'],
   manager: ['orders', 'tables', 'menu', 'qr'],
   waiter: ['orders', 'tables'],
 };

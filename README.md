@@ -213,6 +213,10 @@ A guest's first menu doesn't wait for the app: a few lines in `web/index.html` a
 
 The phone keeps the last menu it loaded. Without a connection the guest still sees it, with a "no internet" banner, and ordering waits for the connection. An order that was sent but got no answer is retried with the same `clientRef`, so the kitchen never gets it twice. A dish that sold out in the meantime is taken out of the basket by name, and after payment the status page says the table is closed.
 
+## Getting a new venue ready
+
+A new venue's owner lands on **Fillimi** (Get started, `/staff/start`) after choosing a password, until the venue is ready for guests. Seven steps, most of which tick themselves from the venue's data (`server/repos/setup.ts`): a logo or cover photo; the ordering hours (ticked by hand); a menu guests can see, with a note while imported categories are still hidden and a link to send the menu to the team on WhatsApp; photos on at least half the dishes, with a count; a staff account besides the owner; the QR codes on the tables (ticked by hand, with the staff sheet already filled in with the venue and the team's number); and a first order. The rail shows how many steps are left. When all are done, or the owner hides the list, it leaves the rail and `/staff` opens on the orders again. Only owners see it (`GET` and `POST /api/staff/venue/setup`); what's ticked by hand, and the hiding, are kept in `venue.setup_marks`.
+
 ## Install on a tablet
 
 The staff dashboard is a PWA: in Chrome or Edge use the install button in the address bar, on an iPad Safari's Share → Add to Home Screen. It opens straight to `/staff`, full screen. Only the dashboard links the install manifest (`web/public/staff.webmanifest`), so guests are never offered to install it.

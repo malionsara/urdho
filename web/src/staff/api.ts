@@ -1,5 +1,5 @@
 import type { MenuItemInput, VenueSettingsInput } from '@shared/schemas';
-import type { LocalizedText, MenuItem, OrderStatus, PaymentMethod, PlacedOrderLine, StaffRole, StaffUser, Venue } from '@shared/types';
+import type { LocalizedText, MenuItem, OrderStatus, PaymentMethod, PlacedOrderLine, SetupMark, StaffRole, StaffUser, Venue, VenueSetup } from '@shared/types';
 import { api, ApiError } from '../lib/http';
 
 /*
@@ -144,5 +144,11 @@ export const removeStaff = (userId: string) => api<void>(`/staff/team/${userId}`
 /* Venue settings ------------------------------------------------------------------ */
 
 export const fetchVenue = async () => (await api<{ venue: Venue }>('/staff/venue')).venue;
+
+/** The owner's get-started checklist. */
+export const fetchSetup = async () => (await api<{ setup: VenueSetup }>('/staff/venue/setup')).setup;
+
+export const markSetup = async ({ mark, done }: { mark: SetupMark; done: boolean }) =>
+  (await api<{ setup: VenueSetup }>('/staff/venue/setup', { method: 'POST', body: { mark, done } })).setup;
 
 export const saveVenue = async (settings: VenueSettingsInput) => (await api<{ venue: Venue }>('/staff/venue', { method: 'PUT', body: settings })).venue;

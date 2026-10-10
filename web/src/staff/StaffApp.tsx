@@ -3,13 +3,14 @@ import { useTranslation } from 'react-i18next';
 import { Navigate, Outlet, Route, Routes } from 'react-router';
 import { brandStyle } from '../lib/brand';
 import { Rail, StaffToastProvider } from './components';
-import { useBoardQuery, useVenueQuery } from './queries';
+import { useBoardQuery, useSetupQuery, useVenueQuery } from './queries';
 import { BoardScreen } from './screens/BoardScreen';
 import { ChangePasswordScreen } from './screens/ChangePasswordScreen';
 import { LoginScreen } from './screens/LoginScreen';
 import { MenuManagerScreen } from './screens/MenuManagerScreen';
 import { QrCodesScreen } from './screens/QrCodesScreen';
 import { SettingsScreen } from './screens/SettingsScreen';
+import { SetupScreen } from './screens/SetupScreen';
 import { TablesScreen } from './screens/TablesScreen';
 import { TeamScreen } from './screens/TeamScreen';
 import { StaffSessionProvider, useStaff } from './session';
@@ -41,7 +42,8 @@ export function StaffApp() {
           <Route path="login" element={<LoginScreen />} />
           <Route path="password" element={<ChangePasswordScreen />} />
           <Route element={<SignedIn />}>
-            <Route index element={<Navigate to="orders" replace />} />
+            <Route index element={<Home />} />
+            <Route path="start" element={<RoleGate page="start"><SetupScreen /></RoleGate>} />
             <Route path="orders" element={<BoardScreen />} />
             <Route path="tables" element={<TablesScreen />} />
             <Route path="menu" element={<RoleGate page="menu"><MenuManagerScreen /></RoleGate>} />
@@ -61,6 +63,16 @@ function RoleGate({ page, children }: { page: string; children: ReactNode }) {
   return can(page) ? children : <Navigate to="/staff/orders" replace />;
 }
 
+/** Where /staff opens: the get-started list for an owner who hasn't finished it, the orders otherwise. */
+function Home() {
+  const { user } = useStaff();
+  const owner = user?.role === 'owner';
+  const setup = useSetupQuery(owner);
+  if (owner && setup.isPending) return <StaffSplash />;
+  const unfinished = owner && setup.data && !setup.data.dismissed && setup.data.steps.some((s) => !s.done);
+  return <Navigate to={unfinished ? 'start' : 'orders'} replace />;
+}
+
 /** While we ask the server who this device belongs to. */
 export function StaffSplash() {
   const { t } = useTranslation();
@@ -78,6 +90,8 @@ function SignedIn() {
   const signedIn = user !== null && !user.mustChangePassword;
   const venue = useVenueQuery();
   const board = useBoardQuery(signedIn);
+  const setup = useSetupQuery(signedIn && user?.role === 'owner');
+  const stepsLeft = setup.data && !setup.data.dismissed ? setup.data.steps.filter((s) => !s.done).length : 0;
   const seen = useRef<Set<string> | null>(null);
 
   // Ring for anything that appeared since the last poll, whichever page is open.
@@ -101,7 +115,7 @@ function SignedIn() {
 
   return (
     <div data-brand className={styles.app} style={brandStyle(venue.data?.brandColor ?? '#C8432A')}>
-      <Rail venue={venue.data} badges={{ orders: newCount + callCount }} />
+      <Rail venue={venue.data} badges={{ orders: newCount + callCount, start: stepsLeft }} hidden={stepsLeft > 0 ? [] : ['start']} />
       <div className={styles.main}>
         <Outlet />
       </div>

@@ -1,0 +1,1 @@
+ALTER TABLE "venue" ADD COLUMN "setup_marks" text[] DEFAULT '{}'::text[] NOT NULL;

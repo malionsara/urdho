@@ -13,6 +13,7 @@ import styles from './staff.module.css';
 /* Navigation ------------------------------------------------------------------ */
 
 const NAV: { page: string; icon: IconName }[] = [
+  { page: 'start', icon: 'check' },
   { page: 'orders', icon: 'receipt' },
   { page: 'tables', icon: 'grid' },
   { page: 'menu', icon: 'book' },
@@ -34,7 +35,8 @@ function swapPage(to: string) {
   };
 }
 
-export function Rail({ venue, badges }: { venue: Venue | undefined; badges: Partial<Record<string, number>> }) {
+/** The side rail. `hidden` takes pages out for now, e.g. the get-started list once it's done. */
+export function Rail({ venue, badges, hidden = [] }: { venue: Venue | undefined; badges: Partial<Record<string, number>>; hidden?: string[] }) {
   const { t } = useTranslation();
   const { user, can, signOut, service } = useStaff();
   const initials = (venue?.name ?? '')
@@ -51,7 +53,7 @@ export function Rail({ venue, badges }: { venue: Venue | undefined; badges: Part
         {venue?.logoUrl ? <img src={venue.logoUrl} alt="" /> : <span>{initials}</span>}
       </div>
       <ul className={styles.railNav}>
-        {NAV.filter((n) => can(n.page)).map((n) => (
+        {NAV.filter((n) => can(n.page) && !hidden.includes(n.page)).map((n) => (
           <li key={n.page}>
             <NavLink to={`/staff/${n.page}`} className={styles.railLink} onClick={swapPage(`/staff/${n.page}`)}>
               <span className={styles.railIcon}>

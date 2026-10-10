@@ -214,6 +214,7 @@
   "staff": {
     "nav": {
       "label": "Paneli",
+      "start": "Fillimi",
       "orders": "Porositë",
       "tables": "Tavolinat",
       "menu": "Menuja",
@@ -445,6 +446,63 @@
       "mismatch": "Dy fjalëkalimet e reja nuk përputhen.",
       "wrongCurrent": "Fjalëkalimi aktual nuk është i saktë.",
       "same": "Fjalëkalimi i ri duhet të jetë ndryshe nga i vjetri."
+    },
+    "setup": {
+      "title": "Fillimi",
+      "lead": "Disa hapa që lokali të jetë gati për klientët e parë. Hapat shënohen vetë sapo i bëni.",
+      "progress": "{{done}} nga {{total}} gati",
+      "done": "U krye",
+      "toDo": "Për t'u bërë",
+      "undo": "Shëno si të pakryer",
+      "dismiss": "Fshihe këtë listë",
+      "readyTitle": "Gati për klientët e parë!",
+      "readyBody": "Gjithçka është në vend. Kur porosit klienti i parë, porosia del te Porositë me zile.",
+      "readyAction": "Te porositë",
+      "steps": {
+        "look": {
+          "title": "Logoja dhe fotoja e lokalit",
+          "body": "Dalin në krye të menusë që shohin klientët. Aty zgjidhni edhe ngjyrën tuaj.",
+          "action": "Hap cilësimet"
+        },
+        "hours": {
+          "title": "Orari i porosive",
+          "body": "Klientët porosisin vetëm brenda orarit. Kontrollojeni për çdo ditë, edhe për ditët kur jeni mbyllur.",
+          "action": "Hap cilësimet",
+          "mark": "Orari është në rregull"
+        },
+        "menu": {
+          "title": "Menuja",
+          "body": "Shtoni kategoritë dhe pjatat me çmimet e tyre.",
+          "action": "Hap menunë",
+          "whatsapp": "Ose na dërgoni foto të menusë në WhatsApp dhe e hedhim ne",
+          "whatsappMessage": "Përshëndetje! Po ju dërgoj menunë e {{venue}} për ta hedhur në Urdho.",
+          "hidden_one": "{{count}} kategori është ende e fshehur për klientët: kontrollojeni dhe ndizeni te Menuja.",
+          "hidden_other": "{{count}} kategori janë ende të fshehura për klientët: kontrollojini dhe ndizini te Menuja."
+        },
+        "photos": {
+          "title": "Foto të pjatave",
+          "body": "Klientët zgjedhin më lehtë kur e shohin pjatën. Mjafton telefoni dhe drita e ditës.",
+          "action": "Hap menunë",
+          "progress": "{{done}} nga {{total}} pjata kanë foto"
+        },
+        "staff": {
+          "title": "Stafi",
+          "body": "Krijoni llogari për kamarierët dhe menaxherin, që secili të hyjë me llogarinë e vet.",
+          "action": "Hap stafin"
+        },
+        "qr": {
+          "title": "Kodet QR në tavolina",
+          "body": "Printojini dhe vendosni një në çdo tavolinë. Për stafin ka edhe një fletë udhëzimesh në një faqe.",
+          "action": "Hap kodet QR",
+          "sheet": "Fleta për stafin",
+          "mark": "Janë në tavolina"
+        },
+        "testOrder": {
+          "title": "Një porosi provë",
+          "body": "Skanoni një kod me telefonin tuaj dhe porositni diçka: porosia del te Porositë me zile. Pastaj mbylleni te Tavolinat.",
+          "action": "Hape menunë si klient"
+        }
+      }
     }
   }
 }
