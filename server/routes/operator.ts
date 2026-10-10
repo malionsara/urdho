@@ -1,15 +1,16 @@
 import { Hono } from 'hono';
 import { createMiddleware } from 'hono/factory';
 import { z } from 'zod';
-import { newVenueInput, staffPasswordResetInput } from '../../shared/schemas';
+import { menuImportInput, newVenueInput, staffPasswordResetInput } from '../../shared/schemas';
 import { bearerToken, sameSecret } from '../auth/crypto';
 import type { Db } from '../db/client';
 import { notFound, readJson, unauthorized } from '../http';
-import { createVenueWithOwner, pilotStats, prepareHealthCheck, resetStaffPassword } from '../repos/operator';
+import { importMenu } from '../repos/menu';
+import { createVenueWithOwner, pilotStats, prepareHealthCheck, resetStaffPassword, venueIdBySlug } from '../repos/operator';
 
 /*
  * /api/operator: the Urdho team's tools for the pilot (pnpm venue:create --live, pnpm pilot:stats
- * --live, pnpm staff:reset-password --live, pnpm smoke --live). Every request needs `Authorization: Bearer <OPERATOR_TOKEN>`. Without an OPERATOR_TOKEN
+ * --live, pnpm staff:reset-password --live, pnpm smoke --live, pnpm menu:import --live). Every request needs `Authorization: Bearer <OPERATOR_TOKEN>`. Without an OPERATOR_TOKEN
  * on the server, the whole section answers 404, as if it didn't exist.
  */
 
@@ -29,6 +30,15 @@ export function operatorRoutes(db: Db, token: string | undefined) {
   routes.post('/venues', async (c) => {
     const input = await readJson(c, newVenueInput);
     return c.json(await createVenueWithOwner(db, input), 201);
+  });
+
+  // A whole menu read from the restaurant's photos or files (pnpm menu:import), added after the
+  // venue's existing categories and hidden from guests unless asked otherwise.
+  routes.post('/venues/:slug/menu', async (c) => {
+    const venueId = await venueIdBySlug(db, c.req.param('slug'));
+    if (!venueId) throw notFound();
+    const input = await readJson(c, menuImportInput);
+    return c.json(await importMenu(db, venueId, input), 201);
   });
 
   routes.post('/staff/password-reset', async (c) => {

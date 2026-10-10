@@ -1,5 +1,5 @@
 import { and, asc, eq, inArray, isNull, sql } from 'drizzle-orm';
-import type { CategoryInput, MenuItemInput } from '../../shared/schemas';
+import type { CategoryInput, MenuImportInput, MenuItemInput } from '../../shared/schemas';
 import type { LocalizedText, MenuItem } from '../../shared/types';
 import type { Db } from '../db/client';
 import { menuCategory, menuItem, menuOption, optionGroup } from '../db/schema';
@@ -90,18 +90,21 @@ export async function loadMenu(db: Executor, venueId: string, { itemIds }: { ite
 /* Categories ---------------------------------------------------------------- */
 
 export async function createCategory(db: Db, venueId: string, input: CategoryInput): Promise<MenuCategoryRow> {
-  return db.transaction(async (tx) => {
-    const [next] = await tx
-      .select({ sortOrder: sql<number>`coalesce(max(${menuCategory.sortOrder}) + 1, 0)` })
-      .from(menuCategory)
-      .where(eq(menuCategory.venueId, venueId));
-    const [row] = await tx
-      .insert(menuCategory)
-      .values({ venueId, sortOrder: next!.sortOrder })
-      .returning({ id: menuCategory.id, active: menuCategory.active });
-    await writeTexts(tx, venueId, 'menu_category', row!.id, 'name', input.name);
-    return { ...row!, name: input.name };
-  });
+  return db.transaction((tx) => insertCategory(tx, venueId, input));
+}
+
+/** A new category at the end of the menu; `active: false` keeps it from guests until it's shown. */
+async function insertCategory(tx: Executor, venueId: string, input: CategoryInput, active = true): Promise<MenuCategoryRow> {
+  const [next] = await tx
+    .select({ sortOrder: sql<number>`coalesce(max(${menuCategory.sortOrder}) + 1, 0)` })
+    .from(menuCategory)
+    .where(eq(menuCategory.venueId, venueId));
+  const [row] = await tx
+    .insert(menuCategory)
+    .values({ venueId, sortOrder: next!.sortOrder, active })
+    .returning({ id: menuCategory.id, active: menuCategory.active });
+  await writeTexts(tx, venueId, 'menu_category', row!.id, 'name', input.name);
+  return { ...row!, name: input.name };
 }
 
 export async function updateCategory(db: Db, venueId: string, id: string, input: { name?: LocalizedText; active?: boolean }) {
@@ -143,45 +146,68 @@ export async function archiveCategory(db: Db, venueId: string, id: string): Prom
  */
 export async function saveItem(db: Db, venueId: string, itemId: string | null, input: MenuItemInput): Promise<MenuItem> {
   return db.transaction(async (tx) => {
-    const [category] = await tx
-      .select({ id: menuCategory.id })
-      .from(menuCategory)
-      .where(and(eq(menuCategory.venueId, venueId), eq(menuCategory.id, input.categoryId), isNull(menuCategory.archivedAt)));
-    if (!category) throw new ApiError(400, 'unknown_category');
-
-    const fields = {
-      categoryId: input.categoryId,
-      priceLek: input.priceLek,
-      photoUrl: input.photoUrl,
-      available: input.available,
-      suggestInBasket: input.suggestInBasket,
-      tags: input.tags,
-      allergens: input.allergens,
-    };
-
-    let id: string;
-    if (itemId === null) {
-      const [next] = await tx
-        .select({ sortOrder: sql<number>`coalesce(max(${menuItem.sortOrder}) + 1, 0)` })
-        .from(menuItem)
-        .where(and(eq(menuItem.venueId, venueId), eq(menuItem.categoryId, input.categoryId)));
-      const [row] = await tx.insert(menuItem).values({ venueId, ...fields, sortOrder: next!.sortOrder }).returning({ id: menuItem.id });
-      id = row!.id;
-    } else {
-      const [row] = await tx
-        .update(menuItem)
-        .set(fields)
-        .where(and(eq(menuItem.venueId, venueId), eq(menuItem.id, itemId), isNull(menuItem.archivedAt)))
-        .returning({ id: menuItem.id });
-      if (!row) throw notFound();
-      id = row.id;
-    }
-    await writeTexts(tx, venueId, 'menu_item', id, 'name', input.name);
-    await writeTexts(tx, venueId, 'menu_item', id, 'description', input.description);
-    await syncOptionGroups(tx, venueId, id, input.optionGroups);
-
+    const id = await writeItem(tx, venueId, itemId, input);
     const saved = await loadMenu(tx, venueId, { itemIds: [id] });
     return saved.items[0]!;
+  });
+}
+
+async function writeItem(tx: Executor, venueId: string, itemId: string | null, input: MenuItemInput): Promise<string> {
+  const [category] = await tx
+    .select({ id: menuCategory.id })
+    .from(menuCategory)
+    .where(and(eq(menuCategory.venueId, venueId), eq(menuCategory.id, input.categoryId), isNull(menuCategory.archivedAt)));
+  if (!category) throw new ApiError(400, 'unknown_category');
+
+  const fields = {
+    categoryId: input.categoryId,
+    priceLek: input.priceLek,
+    photoUrl: input.photoUrl,
+    available: input.available,
+    suggestInBasket: input.suggestInBasket,
+    tags: input.tags,
+    allergens: input.allergens,
+  };
+
+  let id: string;
+  if (itemId === null) {
+    const [next] = await tx
+      .select({ sortOrder: sql<number>`coalesce(max(${menuItem.sortOrder}) + 1, 0)` })
+      .from(menuItem)
+      .where(and(eq(menuItem.venueId, venueId), eq(menuItem.categoryId, input.categoryId)));
+    const [row] = await tx.insert(menuItem).values({ venueId, ...fields, sortOrder: next!.sortOrder }).returning({ id: menuItem.id });
+    id = row!.id;
+  } else {
+    const [row] = await tx
+      .update(menuItem)
+      .set(fields)
+      .where(and(eq(menuItem.venueId, venueId), eq(menuItem.id, itemId), isNull(menuItem.archivedAt)))
+      .returning({ id: menuItem.id });
+    if (!row) throw notFound();
+    id = row.id;
+  }
+  await writeTexts(tx, venueId, 'menu_item', id, 'name', input.name);
+  await writeTexts(tx, venueId, 'menu_item', id, 'description', input.description);
+  await syncOptionGroups(tx, venueId, id, input.optionGroups);
+  return id;
+}
+
+/**
+ * Adds a whole menu at once (pnpm menu:import): every category after the existing ones, with its
+ * dishes, in one transaction, so a failure leaves the menu exactly as it was. Hidden categories
+ * (`visible: false`) stay off the guests' menu until someone checks them and shows them.
+ */
+export async function importMenu(db: Db, venueId: string, input: MenuImportInput): Promise<{ categories: number; items: number }> {
+  return db.transaction(async (tx) => {
+    let items = 0;
+    for (const category of input.categories) {
+      const { id: categoryId } = await insertCategory(tx, venueId, { name: category.name }, input.visible);
+      for (const item of category.items) {
+        await writeItem(tx, venueId, null, { ...item, categoryId });
+        items += 1;
+      }
+    }
+    return { categories: input.categories.length, items };
   });
 }
 

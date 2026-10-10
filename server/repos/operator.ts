@@ -101,6 +101,12 @@ export async function resetStaffPassword(db: Db, email: string): Promise<Passwor
   return { name: account.name, email: account.email, role: account.role, venue: place!, temporaryPassword: password };
 }
 
+/** A venue's id from its address, for the team's tools; undefined if no venue has it. */
+export async function venueIdBySlug(db: Db, slug: string): Promise<string | undefined> {
+  const [row] = await db.select({ id: venue.id }).from(venue).where(eq(venue.slug, slug));
+  return row?.id;
+}
+
 /* Health check ------------------------------------------------------------- */
 
 const HEALTH_CHECK_EMAIL = 'health-check@urdho.al';

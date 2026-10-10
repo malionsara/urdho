@@ -133,6 +133,18 @@ export const menuItemInput = z.object({
   optionGroups: z.array(optionGroupInput).max(10),
 });
 
+/**
+ * A whole menu at once (operator only: pnpm menu:import), dishes exactly as the menu manager saves
+ * them, minus their category id. Hidden from guests unless `visible`, until someone has checked it.
+ */
+export const menuImportInput = z.object({
+  visible: z.boolean().default(false),
+  categories: z
+    .array(categoryInput.extend({ items: z.array(menuItemInput.omit({ categoryId: true })).min(1).max(300) }))
+    .min(1)
+    .max(60),
+});
+
 export const availabilityInput = z.object({ available: z.boolean() });
 
 export const PHOTO_KINDS = ['dish', 'cover', 'logo'] as const;
@@ -170,6 +182,7 @@ export const payInput = z.object({
 export type PlaceOrderInput = z.infer<typeof placeOrderInput>;
 export type CategoryInput = z.infer<typeof categoryInput>;
 export type MenuItemInput = z.infer<typeof menuItemInput>;
+export type MenuImportInput = z.infer<typeof menuImportInput>;
 export type LoginInput = z.infer<typeof loginInput>;
 export type PasswordChangeInput = z.infer<typeof passwordChangeInput>;
 export type NewStaffInput = z.infer<typeof newStaffInput>;

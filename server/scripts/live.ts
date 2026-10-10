@@ -9,6 +9,7 @@ import { parseEnv } from 'node:util';
  *   URDHO_OPERATOR_TOKEN=…   (the same value as OPERATOR_TOKEN on the Vercel project)
  *   TELEGRAM_BOT_TOKEN=…     (optional: where pnpm smoke --live reports a failure, see alerts.ts)
  *   TELEGRAM_CHAT_ID=…
+ *   ANTHROPIC_API_KEY=…     (for pnpm menu:import, which reads menus with Claude)
  *
  * On GitHub (the hourly health check) the same names come from the repository's secrets instead.
  */
@@ -32,7 +33,7 @@ export function operatorSettings(): Record<string, string | undefined> {
     // No file: on GitHub, or a machine without the live key.
   }
   const fromFile = parseEnv(file) as Record<string, string | undefined>;
-  const names = ['URDHO_URL', 'URDHO_OPERATOR_TOKEN', 'TELEGRAM_BOT_TOKEN', 'TELEGRAM_CHAT_ID'];
+  const names = ['URDHO_URL', 'URDHO_OPERATOR_TOKEN', 'TELEGRAM_BOT_TOKEN', 'TELEGRAM_CHAT_ID', 'ANTHROPIC_API_KEY'];
   return Object.fromEntries(names.map((name) => [name, process.env[name] || fromFile[name]]));
 }
 

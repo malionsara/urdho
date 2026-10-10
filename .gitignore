@@ -12,3 +12,5 @@ web/public/uploads/
 
 # The API bundle for Vercel (pnpm build)
 server/dist/
+# Menus read by pnpm menu:import, before they are loaded (restaurants' data, not code)
+menu-drafts/

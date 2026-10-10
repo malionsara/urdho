@@ -45,6 +45,7 @@ Open http://localhost:5173 for the design-review page, which links to every scre
 | `pnpm staff:reset-password` | A forgotten password, owners' included: `--email person@example.com`. Prints a temporary password once, signs the person out everywhere. `--live` |
 | `pnpm pilot:stats` | Pilot numbers per venue: orders, value, tables served, waiter calls, cash and card, days with orders. `--days 30`, `--live` |
 | `pnpm smoke` | Health check: one table from scan to paid through the API, in its own hidden venue; says OK or which step broke. `--live` checks the live site |
+| `pnpm menu:import` | Loads a restaurant's menu from photos, PDFs, links or CSV, read by Claude into Albanian and English; hidden from guests until checked (see [Menu import](#menu-import)). `--live` |
 | `pnpm alerts:test` | Connects the Telegram alerts: lists the chats that wrote to the bot, or sends a test message (see [Alerts](#alerts)) |
 
 ## Deploy
@@ -80,6 +81,7 @@ URDHO_URL=https://urdho.al
 URDHO_OPERATOR_TOKEN=<the same value as OPERATOR_TOKEN on the Vercel project>
 TELEGRAM_BOT_TOKEN=<optional: the alerts bot, so a failed pnpm smoke --live reaches the chat>
 TELEGRAM_CHAT_ID=<optional: the chat>
+ANTHROPIC_API_KEY=<for pnpm menu:import, from console.anthropic.com>
 ```
 
 - A new pilot venue: `pnpm venue:create --live --name "Bar Kalaja" --slug bar-kalaja --owner-name "Full Name" --owner-email owner@example.com --tables 10`. It prints the owner's temporary password once (they choose their own at first sign-in) and the sign-in and table addresses. The owner then sets the menu, photos and opening hours, and prints the table cards under QR codes. Print them from the final domain: each code contains the address it was printed from.
@@ -90,6 +92,22 @@ TELEGRAM_CHAT_ID=<optional: the chat>
 Each venue gets the staff quick-start sheet, one A4 page in Albanian and one in English, at `/quick-start.html` on the live site (`web/public/quick-start.html`). `venue:create` prints the venue's link; add `&help=<your WhatsApp number>` to print the support number on it, then print with Ctrl+P, or send the link to staff. Its button names are copied from the language files, so update it when those change.
 
 To revoke the key, change `OPERATOR_TOKEN` on Vercel and redeploy; put the new value in `.env.operator` and in the GitHub secret `URDHO_OPERATOR_TOKEN`. Without `--live`, these commands work on the database in `.env` (`pnpm smoke` runs the API inside the command, so no server is needed).
+
+### Menu import
+
+A new venue's menu usually exists already: as photos of the paper menu (sent over WhatsApp), a PDF, a web or QR menu, or a spreadsheet. `pnpm menu:import` reads any mix of these with Claude (`server/menuImport/`) and turns it into Urdho's menu: categories and dishes in the menu's order, names and descriptions in Albanian and English (the menu's own text, translated into the other language; traditional dish names stay Albanian; nothing invented), prices in lekë, sizes and portions as a required choice, paid extras as an optional one. Allergens and the vegetarian, spicy and new tags are taken only where the menu marks them; Claude is told never to infer an allergen.
+
+```bash
+pnpm menu:import --live --venue bar-kalaja ./bar-kalaja-photos https://bar-kalaja.al/menu
+```
+
+That reads the menu (photos are turned upright and sized for Claude; a folder means every photo, PDF and CSV in it, in name order; a link can be a web page, PDF or image) and writes `menu-drafts/bar-kalaja.json` and a readable `menu-drafts/bar-kalaja.txt` (git-ignored). Check every price in the `.txt`; fix anything in the `.json`. Dishes without a readable price are left out and listed, never imported at 0. Then load it:
+
+```bash
+pnpm menu:import --live --venue bar-kalaja --draft menu-drafts/bar-kalaja.json --apply
+```
+
+The import adds categories after the venue's existing ones, all in one transaction (`POST /api/operator/venues/:slug/menu`), and never changes or removes what's there. The new categories are hidden: in the dashboard, Menu shows them marked "Hidden", and the "Shown to guests" switch above a category's dishes puts it on the guests' menu once someone has checked it (`--visible` skips that). Dish photos and any allergens the menu didn't mark are for the owner to add there. A menu priced in euro needs `--eur-rate` (lekë per euro). A web menu drawn by JavaScript has no text to read: the command says so, and screenshots of it work instead. Needs `ANTHROPIC_API_KEY` in `.env.operator`; the default model is `claude-opus-5-5` (`--model` to change), and each run prints the tokens it used.
 
 ### Alerts
 

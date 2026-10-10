@@ -74,6 +74,60 @@ describe('creating a pilot venue', () => {
   });
 });
 
+describe('importing a menu', () => {
+  const menu = (overrides: Record<string, unknown> = {}) => ({
+    categories: [
+      {
+        name: { sq: 'Pije', en: 'Drinks' },
+        items: [
+          { name: { sq: 'Birrë Korça' }, description: {}, priceLek: 300, photoUrl: null, available: true, suggestInBasket: false, tags: [], allergens: [], optionGroups: [] },
+          {
+            name: { sq: 'Kafe', en: 'Coffee' },
+            description: {},
+            priceLek: 100,
+            photoUrl: null,
+            available: true,
+            suggestInBasket: false,
+            tags: [],
+            allergens: ['milk'],
+            optionGroups: [{ name: { sq: 'Lloji', en: 'Kind' }, minSelect: 1, maxSelect: 1, options: [{ name: { sq: 'Espresso' }, priceDeltaLek: 0, available: true }, { name: { sq: 'Kapuçino' }, priceDeltaLek: 50, available: true }] }],
+          },
+        ],
+      },
+    ],
+    ...overrides,
+  });
+
+  it('adds the categories and dishes to that venue only, hidden from its guests', async () => {
+    const target = await makeVenueWithStaff(db, 'Import');
+    const other = await makeVenueWithStaff(db, 'Other');
+    const res = await operator('POST', `/venues/${target.slug}/menu`, menu());
+    expect(res.status).toBe(201);
+    expect(await res.json()).toEqual({ categories: 1, items: 2 });
+
+    const owner = (await login(target.owner.email)).cookie;
+    const loaded = (await call('GET', '/api/staff/menu', { cookie: owner })).body!;
+    const drinks = loaded.categories.find((c: { name: { sq?: string } }) => c.name.sq === 'Pije');
+    expect(drinks).toMatchObject({ active: false });
+    const coffee = loaded.items.find((i: { name: { sq?: string } }) => i.name.sq === 'Kafe');
+    expect(coffee).toMatchObject({ priceLek: 100, allergens: ['milk'], optionGroups: [{ options: [{ priceDeltaLek: 0 }, { priceDeltaLek: 50 }] }] });
+
+    const othersMenu = (await call('GET', '/api/staff/menu', { cookie: (await login(other.owner.email)).cookie })).body!;
+    expect(othersMenu.items.some((i: { name: { sq?: string } }) => i.name.sq === 'Kafe')).toBe(false);
+  });
+
+  it('can show the new categories at once, and refuses an unknown venue or a broken menu', async () => {
+    const v = await makeVenueWithStaff(db, 'Visible');
+    expect((await operator('POST', `/venues/${v.slug}/menu`, menu({ visible: true }))).status).toBe(201);
+    const loaded = (await call('GET', '/api/staff/menu', { cookie: (await login(v.owner.email)).cookie })).body!;
+    expect(loaded.categories.find((c: { name: { sq?: string } }) => c.name.sq === 'Pije')).toMatchObject({ active: true });
+
+    expect((await operator('POST', '/venues/no-such-venue/menu', menu())).status).toBe(404);
+    const negative = menu({ categories: [{ name: { sq: 'X' }, items: [{ ...menu().categories[0]!.items[0], priceLek: -5 }] }] });
+    expect((await operator('POST', `/venues/${v.slug}/menu`, negative)).status).toBe(400);
+  });
+});
+
 describe('resetting a forgotten password', () => {
   const from = (ip: string) => ({ headers: { 'x-real-ip': ip } });
 
