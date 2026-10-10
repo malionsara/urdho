@@ -354,7 +354,10 @@
       "missingName": "Shkruani emrin në {{language}}.",
       "archiveTitle": "Të arkivohet “{{name}}”?",
       "archiveBody": "Pjata hiqet nga menuja. Porositë e kaluara e ruajnë emrin dhe çmimin.",
-      "archiveConfirm": "Arkivo pjatën"
+      "archiveConfirm": "Arkivo pjatën",
+      "hidden": "E fshehur",
+      "shownToGuests": "E dukshme për klientët",
+      "hiddenHint": "Klientët nuk e shohin këtë kategori. Kontrollojeni dhe ndizeni kur të jetë gati."
     },
     "qr": {
       "title": "Kodet QR",

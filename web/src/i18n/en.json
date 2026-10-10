@@ -354,7 +354,10 @@
       "missingName": "Enter the name in {{language}}.",
       "archiveTitle": "Archive “{{name}}”?",
       "archiveBody": "The dish leaves the menu. Past orders keep its name and price.",
-      "archiveConfirm": "Archive dish"
+      "archiveConfirm": "Archive dish",
+      "hidden": "Hidden",
+      "shownToGuests": "Shown to guests",
+      "hiddenHint": "Guests don't see this category. Check it, then switch it on when it's ready."
     },
     "qr": {
       "title": "QR codes",

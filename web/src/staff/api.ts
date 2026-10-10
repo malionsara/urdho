@@ -111,6 +111,9 @@ export const setItemAvailable = (id: string, available: boolean) =>
 
 export const archiveItem = (id: string) => api<void>(`/staff/menu/items/${id}`, { method: 'DELETE' });
 
+/** Shows a category (and its dishes) to guests, or hides it: imported menus arrive hidden. */
+export const setCategoryShown = (id: string, active: boolean) => api<void>(`/staff/menu/categories/${id}`, { method: 'PATCH', body: { active } });
+
 export const addCategory = async (name: LocalizedText) =>
   (await api<{ category: MenuCategoryRow }>('/staff/menu/categories', { method: 'POST', body: { name } })).category;
 

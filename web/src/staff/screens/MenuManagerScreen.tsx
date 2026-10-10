@@ -9,7 +9,7 @@ import { Button, ButtonLink } from '../../ui/Button';
 import { Icon } from '../../ui/Icon';
 import { KilimBand } from '../../ui/Kilim';
 import { DishImage, Notice } from '../../ui/primitives';
-import { addCategory, archiveItem, createItem, setItemAvailable, updateItem, uploadPhoto } from '../api';
+import { addCategory, archiveItem, createItem, setCategoryShown, setItemAvailable, updateItem, uploadPhoto } from '../api';
 import { ConfirmDialog, PageHeader, Switch, useStaffText, useStaffToast } from '../components';
 import { useMenuAdminQuery, useQrTablesQuery, useStaffMutation, useVenueQuery } from '../queries';
 import staffStyles from '../staff.module.css';
@@ -28,11 +28,13 @@ export function MenuManagerScreen() {
   const [newCategory, setNewCategory] = useState<string | null>(null);
   const toggle = useStaffMutation(({ id, on }: { id: string; on: boolean }) => setItemAvailable(id, on));
   const createCategory = useStaffMutation(addCategory);
+  const showCategory = useStaffMutation(({ id, on }: { id: string; on: boolean }) => setCategoryShown(id, on));
 
   if (!menu.data || !venueQuery.data) return <p className={staffStyles.loading}>{t('common.loading')}</p>;
   const { categories, items } = menu.data;
   const venue = venueQuery.data;
   const activeCategory = categoryId ?? categories[0]?.id ?? null;
+  const current = categories.find((c) => c.id === activeCategory);
   const list = items.filter((i) => i.categoryId === activeCategory);
   const guestLink = qr.data?.tables[0] ? `/${venue.slug}/t/${qr.data.tables[0].qrToken}` : null;
 
@@ -91,7 +93,10 @@ export function MenuManagerScreen() {
                       setDraft(null);
                     }}
                   >
-                    <span>{text(c.name)}</span>
+                    <span className={styles.categoryName}>
+                      {text(c.name)}
+                      {!c.active && <span className={styles.hiddenTag}>{t('staff.menu.hidden')}</span>}
+                    </span>
                     <span className={styles.count}>{items.filter((i) => i.categoryId === c.id).length}</span>
                   </button>
                 </li>
@@ -136,6 +141,13 @@ export function MenuManagerScreen() {
                 {t('staff.menu.addItem')}
               </Button>
             </div>
+            {current && (
+              <div className={styles.shown}>
+                <Switch checked={current.active} label={t('staff.menu.shownToGuests')} onChange={(on) => showCategory.mutate({ id: current.id, on })} />
+                {t('staff.menu.shownToGuests')}
+              </div>
+            )}
+            {current && !current.active && <Notice tone="info">{t('staff.menu.hiddenHint')}</Notice>}
             <ul className={styles.itemList}>
               {list.map((item) => (
                 <li key={item.id}>
