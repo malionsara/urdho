@@ -25,6 +25,18 @@ describe('scheduled jobs', () => {
     for (const secret of [null, 'not-the-secret', `${SECRET}x`]) expect((await cron(path.replace('/api/cron', ''), secret)).status).toBe(401);
   });
 
+  it('run the nightly deletion and report what it did', async () => {
+    const res = await cron('/retention');
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual({
+      venues: expect.any(Number),
+      guestDetailsCleared: expect.any(Number),
+      ordersDeleted: expect.any(Number),
+      staffSessionsDeleted: expect.any(Number),
+      loginFailuresDeleted: expect.any(Number),
+    });
+  });
+
   it('send the morning summary to the team', async () => {
     sent.length = 0;
     const res = await cron('/daily-summary');

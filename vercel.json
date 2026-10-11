@@ -5,7 +5,10 @@
   "buildCommand": "pnpm deploy:build",
   "outputDirectory": "dist",
   "regions": ["fra1"],
-  "crons": [{ "path": "/api/cron/daily-summary", "schedule": "0 7 * * *" }],
+  "crons": [
+    { "path": "/api/cron/daily-summary", "schedule": "0 7 * * *" },
+    { "path": "/api/cron/retention", "schedule": "30 2 * * *" }
+  ],
   "redirects": [
     {
       "source": "/:path((?!sw\\.js$|sw-old-address\\.js$|workbox-[^/]+\\.js$|api/cron/).*)",

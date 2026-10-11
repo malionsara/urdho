@@ -4,6 +4,7 @@ import { bearerToken, sameSecret } from '../auth/crypto';
 import type { Db } from '../db/client';
 import { notFound, unauthorized } from '../http';
 import { pilotStats } from '../repos/operator';
+import { applyRetention } from '../retention';
 import { dailySummaryText } from '../summary';
 
 /*
@@ -38,6 +39,9 @@ export function cronRoutes(db: Db, { secret, notify }: CronOptions) {
     const sent = notify ? await notify(dailySummaryText(stats)) : false;
     return c.json({ sent, venues: stats.venues.length });
   });
+
+  // Every night after the service day ends: delete what the privacy notice says isn't kept.
+  routes.get('/retention', async (c) => c.json(await applyRetention(db)));
 
   return routes;
 }
