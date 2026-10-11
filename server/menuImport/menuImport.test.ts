@@ -78,7 +78,7 @@ const call = (send: (url: string, init: RequestInit) => Promise<Response>) =>
 
 describe('reading Claude’s answer', () => {
   it('puts the streamed tool input back together, with the model and tokens used', async () => {
-    let request: { headers: Record<string, string>; body: { tool_choice: unknown; stream: boolean } } | undefined;
+    let request: { headers: Record<string, string>; body: { tool_choice: unknown; tools: { name: string }[]; stream: boolean } } | undefined;
     const result = await call(async (_url, init) => {
       request = { headers: init.headers as Record<string, string>, body: JSON.parse(String(init.body)) };
       return sse([
@@ -92,7 +92,16 @@ describe('reading Claude’s answer', () => {
     });
     expect(result).toEqual({ input: { ok: true }, model: 'claude-test', usage: { inputTokens: 1200, outputTokens: 30 } });
     expect(request?.headers['x-api-key']).toBe('test-key');
-    expect(request?.body).toMatchObject({ stream: true, tool_choice: { type: 'tool', name: 'save_menu' } });
+    expect(request?.body).toMatchObject({ stream: true, tool_choice: { type: 'auto' }, tools: [{ name: 'save_menu' }] });
+  });
+
+  it('quotes Claude when it answers in words instead of with the menu', async () => {
+    const words = sse([
+      { type: 'content_block_delta', index: 0, delta: { type: 'text_delta', text: 'I cannot read this photo:' } },
+      { type: 'content_block_delta', index: 0, delta: { type: 'text_delta', text: ' it is too blurry.' } },
+      { type: 'message_delta', delta: { stop_reason: 'end_turn' } },
+    ]);
+    await expect(call(async () => words)).rejects.toThrow('Claude returned no menu, only this: "I cannot read this photo: it is too blurry."');
   });
 
   it('says when the menu was too long for one answer', async () => {

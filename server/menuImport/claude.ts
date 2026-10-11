@@ -1,7 +1,9 @@
 /*
- * One call to Claude (the Messages API, over fetch: no SDK needed) that must answer through a
- * single tool, so the menu comes back as JSON in our schema rather than as prose. The answer is
- * streamed: a long menu can take minutes, longer than a plain request may wait for its headers.
+ * One call to Claude (the Messages API, over fetch: no SDK needed) that answers through a single
+ * tool, so the menu comes back as JSON in our schema rather than as prose. The tool can't be forced
+ * (current models refuse tool_choice "tool"), so the instructions require it and an answer without
+ * it is an error that quotes what Claude said instead. The answer is streamed: a long menu can
+ * take minutes, longer than a plain request may wait for its headers.
  */
 
 export const DEFAULT_MODEL = 'claude-opus-5-5';
@@ -42,7 +44,7 @@ export async function callTool<T>({ apiKey, model = DEFAULT_MODEL, system, conte
     stream: true,
     system,
     tools: [tool],
-    tool_choice: { type: 'tool', name: tool.name },
+    tool_choice: { type: 'auto' },
     messages: [{ role: 'user', content }],
   });
 
@@ -68,7 +70,7 @@ interface StreamEvent {
   type: string;
   message?: { model?: string; usage?: { input_tokens?: number } };
   content_block?: { type: string };
-  delta?: { type?: string; partial_json?: string; stop_reason?: string };
+  delta?: { type?: string; partial_json?: string; text?: string; stop_reason?: string };
   usage?: { output_tokens?: number };
   error?: { message?: string };
 }
@@ -76,6 +78,7 @@ interface StreamEvent {
 /** Reads the server-sent events and puts the tool's JSON back together. */
 async function readStream<T>(stream: ReadableStream<Uint8Array>, requested: string): Promise<ToolResult<T>> {
   let json = '';
+  let said = '';
   let model = requested;
   let inputTokens = 0;
   let outputTokens = 0;
@@ -88,6 +91,8 @@ async function readStream<T>(stream: ReadableStream<Uint8Array>, requested: stri
       inputTokens = event.message?.usage?.input_tokens ?? 0;
     } else if (event.type === 'content_block_delta' && event.delta?.type === 'input_json_delta') {
       json += event.delta.partial_json ?? '';
+    } else if (event.type === 'content_block_delta' && event.delta?.type === 'text_delta') {
+      said += event.delta.text ?? '';
     } else if (event.type === 'message_delta') {
       stopReason = event.delta?.stop_reason ?? stopReason;
       outputTokens = event.usage?.output_tokens ?? outputTokens;
@@ -116,7 +121,10 @@ async function readStream<T>(stream: ReadableStream<Uint8Array>, requested: stri
   }
 
   if (stopReason === 'max_tokens') throw new ClaudeError('The menu is too long for one reading. Split the photos or pages into two runs.');
-  if (!json) throw new ClaudeError(`Claude returned no menu (stop reason: ${stopReason ?? 'none'}).`);
+  if (!json) {
+    const reply = said.trim().replace(/\s+/g, ' ').slice(0, 400);
+    throw new ClaudeError(`Claude returned no menu${reply ? `, only this: "${reply}"` : ` (stop reason: ${stopReason ?? 'none'})`}`);
+  }
   try {
     return { input: JSON.parse(json) as T, model, usage: { inputTokens, outputTokens } };
   } catch {
