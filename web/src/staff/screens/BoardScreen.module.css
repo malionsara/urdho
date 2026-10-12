@@ -114,6 +114,34 @@
   animation: none;
 }
 
+/* Outside opening hours with every table settled: the board checks in every half hour. */
+.live[data-resting] {
+  background: var(--surface-sunken);
+  color: var(--text-muted);
+}
+
+.live[data-resting] .liveDot {
+  background: var(--text-subtle);
+  animation: none;
+}
+
+.checkNow {
+  padding: 4px 8px;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-muted);
+  font-size: var(--text-xs);
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.checkNow:hover {
+  color: var(--ink);
+  background: var(--surface-sunken);
+}
+
 @keyframes blink {
   50% {
     opacity: 0.25;

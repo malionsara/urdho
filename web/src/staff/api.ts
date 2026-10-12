@@ -83,7 +83,8 @@ export const changePassword = (currentPassword: string, newPassword: string) =>
 
 /* Service ---------------------------------------------------------------------- */
 
-export const fetchBoard = () => api<{ orders: BoardOrder[]; calls: BoardCall[] }>('/staff/board');
+/** openTables: tables with a bill or an unanswered call, which keep the board watching after hours. */
+export const fetchBoard = () => api<{ orders: BoardOrder[]; calls: BoardCall[]; openTables: number }>('/staff/board');
 
 export const setOrderStatus = (orderId: string, status: Exclude<OrderStatus, 'new'>) =>
   api<void>(`/staff/orders/${orderId}`, { method: 'PATCH', body: { status } });

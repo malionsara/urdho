@@ -3,7 +3,8 @@ import { useTranslation } from 'react-i18next';
 import { Navigate, Outlet, Route, Routes } from 'react-router';
 import { brandStyle } from '../lib/brand';
 import { Rail, StaffToastProvider } from './components';
-import { useBoardQuery, useSetupQuery, useVenueQuery } from './queries';
+import { PACE_MS, useClock } from './pace';
+import { boardPace, useBoardQuery, useSetupQuery, useVenueQuery } from './queries';
 import { BoardScreen } from './screens/BoardScreen';
 import { ChangePasswordScreen } from './screens/ChangePasswordScreen';
 import { LoginScreen } from './screens/LoginScreen';
@@ -93,6 +94,17 @@ function SignedIn() {
   const setup = useSetupQuery(signedIn && user?.role === 'owner');
   const stepsLeft = setup.data && !setup.data.dismissed ? setup.data.steps.filter((s) => !s.done).length : 0;
   const seen = useRef<Set<string> | null>(null);
+
+  // Closed and every table settled: the screen may sleep, and the board checks in every half hour.
+  // Each of those checks re-reads the venue too, so hours changed on another device are seen.
+  const now = useClock();
+  const resting = boardPace(board.data, venue.data, now) === PACE_MS.closed;
+  const { keepAwake } = service;
+  const { refetch: refetchVenue } = venue;
+  useEffect(() => keepAwake(!resting), [keepAwake, resting]);
+  useEffect(() => {
+    if (resting && board.dataUpdatedAt) void refetchVenue();
+  }, [resting, board.dataUpdatedAt, refetchVenue]);
 
   // Ring for anything that appeared since the last poll, whichever page is open.
   useEffect(() => {

@@ -34,11 +34,16 @@ export function dailySummaryText(stats: PilotStats): string {
   const quiet = stats.venues.filter((v) => !busy.includes(v) && v.openDays > 0);
   const orders = busy.reduce((sum, v) => sum + v.orders, 0);
   const value = busy.reduce((sum, v) => sum + v.valueLek, 0);
+  // Bills nobody marked paid: worth a message to the venue today.
+  const leftOpen = stats.venues
+    .filter((v) => v.leftOpen.length > 0)
+    .map((v) => `${v.venue.name} ${v.leftOpen.map((t) => `table ${t.tableNumber} (${lek(t.billLek)})`).join(', ')}`);
 
   return [
     heading,
     busy.length > 0 ? `${plural(orders, 'order')}, ${lek(value)}, at ${plural(busy.length, 'venue')}` : 'No orders anywhere.',
     ...busy.map(venueLine),
+    leftOpen.length > 0 ? `⚠️ Never marked paid, closed overnight: ${leftOpen.join('; ')}` : '',
     quiet.length > 0 ? `Open but no orders: ${quiet.map((v) => v.venue.name).join(', ')}` : '',
   ]
     .filter(Boolean)

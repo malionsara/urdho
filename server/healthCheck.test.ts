@@ -1,11 +1,11 @@
 import { eq } from 'drizzle-orm';
 import { describe, expect, it } from 'vitest';
-import { HEALTH_CHECK_SLUG } from '../../shared/schemas';
-import { venue } from '../db/schema';
-import { pilotStats, prepareHealthCheck } from '../repos/operator';
-import { testApi } from '../test/api';
-import { connectTestDb } from '../test/db';
-import { failureAlert, runSmokeCheck } from './smoke-check';
+import { HEALTH_CHECK_SLUG } from '../shared/schemas';
+import { venue } from './db/schema';
+import { pilotStats, prepareHealthCheck } from './repos/operator';
+import { testApi } from './test/api';
+import { connectTestDb } from './test/db';
+import { failureAlert, runSmokeCheck } from './healthCheck';
 
 const db = connectTestDb();
 const TOKEN = 'test-operator-key-0123456789';

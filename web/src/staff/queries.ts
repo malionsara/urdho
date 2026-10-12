@@ -1,11 +1,9 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import type { OrderStatus } from '@shared/types';
+import type { OrderStatus, Venue } from '@shared/types';
 import { shouldRetry } from '../lib/http';
 import { animateChange } from '../lib/motion';
 import * as api from './api';
-
-/** The spec's polling interval for the live board. */
-const BOARD_POLL_MS = 3000;
+import { servicePace, useClock } from './pace';
 
 export const ME_KEY = ['staff', 'me'];
 
@@ -15,11 +13,26 @@ export function useMeQuery() {
 
 const BOARD_KEY = ['staff', 'board'];
 
-export function useBoardQuery(enabled = true) {
-  return useQuery({ queryKey: BOARD_KEY, queryFn: api.fetchBoard, refetchInterval: BOARD_POLL_MS, enabled, retry: shouldRetry });
+type Board = Awaited<ReturnType<typeof api.fetchBoard>>;
+
+/** How often the board asks for news (see pace.ts): orders still in play or calls make it busy. */
+export function boardPace(board: Board | undefined, venue: Venue | undefined, now: Date) {
+  const waiting = !!board && (board.calls.length > 0 || board.orders.some((o) => o.status === 'new' || o.status === 'preparing'));
+  return servicePace({ waiting, openTables: board?.openTables ?? 0, venue, now });
 }
 
-type Board = Awaited<ReturnType<typeof api.fetchBoard>>;
+export function useBoardQuery(enabled = true) {
+  const venue = useVenueQuery();
+  const now = useClock();
+  return useQuery({
+    queryKey: BOARD_KEY,
+    queryFn: api.fetchBoard,
+    refetchInterval: (query) => boardPace(query.state.data, venue.data, now),
+    enabled,
+    retry: shouldRetry,
+  });
+}
+
 type NextStatus = Exclude<OrderStatus, 'new'>;
 
 /**
@@ -52,7 +65,18 @@ export function useOrderStatusMutation() {
 }
 
 export function useTablesQuery() {
-  return useQuery({ queryKey: ['staff', 'tables'], queryFn: api.fetchTables, refetchInterval: BOARD_POLL_MS, retry: shouldRetry });
+  const venue = useVenueQuery();
+  const now = useClock();
+  return useQuery({
+    queryKey: ['staff', 'tables'],
+    queryFn: api.fetchTables,
+    // A running bill can change at any moment, and the waiter reads it to take payment.
+    refetchInterval: (query) => {
+      const open = query.state.data?.filter((t) => t.session).length ?? 0;
+      return servicePace({ waiting: open > 0, openTables: open, venue: venue.data, now });
+    },
+    retry: shouldRetry,
+  });
 }
 
 export function useVenueQuery() {

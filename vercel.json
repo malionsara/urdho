@@ -7,7 +7,9 @@
   "regions": ["fra1"],
   "crons": [
     { "path": "/api/cron/daily-summary", "schedule": "0 7 * * *" },
-    { "path": "/api/cron/retention", "schedule": "30 2 * * *" }
+    { "path": "/api/cron/retention", "schedule": "30 2 * * *" },
+    { "path": "/api/cron/close-tables", "schedule": "0 2 * * *" },
+    { "path": "/api/cron/health-check", "schedule": "0 9 * * *" }
   ],
   "redirects": [
     {

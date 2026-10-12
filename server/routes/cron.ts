@@ -2,6 +2,8 @@ import { Hono } from 'hono';
 import { createMiddleware } from 'hono/factory';
 import { bearerToken, sameSecret } from '../auth/crypto';
 import type { Db } from '../db/client';
+import { closeForgottenTables } from '../forgottenTables';
+import { failureAlert, runSmokeCheck, type HealthCheckTarget } from '../healthCheck';
 import { notFound, unauthorized } from '../http';
 import { pilotStats } from '../repos/operator';
 import { applyRetention } from '../retention';
@@ -17,9 +19,13 @@ export interface CronOptions {
   secret: string | undefined;
   /** Delivers a message to the team (Telegram); false when it couldn't. */
   notify: ((text: string) => Promise<boolean>) | undefined;
+  /** The health check orders through the operator tools, so it needs their key. */
+  operatorToken: string | undefined;
+  /** The live site, for the morning health check; without it that job doesn't exist. */
+  healthCheck: HealthCheckTarget | undefined;
 }
 
-export function cronRoutes(db: Db, { secret, notify }: CronOptions) {
+export function cronRoutes(db: Db, { secret, notify, operatorToken, healthCheck }: CronOptions) {
   const routes = new Hono();
 
   routes.use(
@@ -42,6 +48,19 @@ export function cronRoutes(db: Db, { secret, notify }: CronOptions) {
 
   // Every night after the service day ends: delete what the privacy notice says isn't kept.
   routes.get('/retention', async (c) => c.json(await applyRetention(db)));
+
+  // Every night after the bars close: tables nobody marked paid, so the next guests start afresh.
+  routes.get('/close-tables', async (c) => c.json(await closeForgottenTables(db)));
+
+  // Every morning before lunch: a table's whole visit on the live site, the way phones make it.
+  // Only a failure goes to the team; a passing run is in Vercel's log of the job.
+  routes.get('/health-check', async (c) => {
+    if (!healthCheck || !operatorToken) throw notFound();
+    const result = await runSmokeCheck({ ...healthCheck, operatorToken });
+    if (!result.ok && notify) await notify(failureAlert(result, healthCheck.baseUrl));
+    const failed = result.steps.find((s) => !s.ok);
+    return c.json({ ok: result.ok, ms: Math.round(result.ms), failed: failed ? { step: failed.name, problem: failed.problem } : null }, result.ok ? 200 : 503);
+  });
 
   return routes;
 }

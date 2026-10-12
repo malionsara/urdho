@@ -225,6 +225,8 @@ export interface VenueStats {
   /** Orders per service day, oldest first. */
   byDay: { date: string; orders: number }[];
   lastOrderAt: string | null;
+  /** Bills never marked paid: tables the nightly job closed (server/forgottenTables.ts). */
+  leftOpen: { tableNumber: number; billLek: number }[];
 }
 
 export interface PilotStats {
@@ -292,6 +294,16 @@ export async function pilotStats(db: Db, days: number, now = new Date()): Promis
     .from(payment)
     .where(and(eq(payment.status, 'confirmed'), gte(payment.confirmedAt, since)));
 
+  // Closed without a payment. Staff can only do that to a table with nothing to pay, so any with a
+  // bill were closed by the nightly job; their orders are all in orderRows (placed after opening).
+  const closedUnpaid = await db.execute<{ venue_id: string; session_id: string; table_number: number; opened_at: string }>(sql`
+    select s.venue_id, s.id as session_id, t.number as table_number, s.opened_at
+      from table_session s
+      join dining_table t on t.id = s.table_id and t.venue_id = s.venue_id
+     where s.status = 'closed' and s.opened_at >= ${since.toISOString()}
+       and not exists (select 1 from payment p where p.session_id = s.id and p.venue_id = s.venue_id and p.status = 'confirmed')
+     order by t.number`);
+
   return {
     days,
     generatedAt: now.toISOString(),
@@ -311,6 +323,14 @@ export async function pilotStats(db: Db, days: number, now = new Date()): Promis
         paid[p.method].lek += p.amountLek;
       }
       const last = kept.map((o) => new Date(o.created_at).getTime()).sort((a, b) => b - a)[0];
+      // Counted on the service day the table opened, like its orders.
+      const leftOpen = closedUnpaid.rows
+        .filter((s) => s.venue_id === v.id && inPeriod(s.opened_at))
+        .map((s) => ({
+          tableNumber: s.table_number,
+          billLek: orderRows.rows.filter((o) => o.session_id === s.session_id && o.status !== 'cancelled').reduce((sum, o) => sum + Number(o.value_lek), 0),
+        }))
+        .filter((t) => t.billLek > 0);
       return {
         venue: { id: v.id, name: v.name, slug: v.slug, createdAt: v.createdAt.toISOString() },
         orders: kept.length,
@@ -323,6 +343,7 @@ export async function pilotStats(db: Db, days: number, now = new Date()): Promis
         daysWithOrders: [...perDay.values()].filter((n) => n > 0).length,
         byDay: [...perDay].map(([date, n]) => ({ date, orders: n })),
         lastOrderAt: last ? new Date(last).toISOString() : null,
+        leftOpen,
       };
     }),
   };

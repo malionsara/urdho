@@ -8,7 +8,8 @@ import { KilimBand } from '../../ui/Kilim';
 import { transitionName } from '../../lib/motion';
 import { acknowledgeCall, type BoardOrder } from '../api';
 import { clockTime, ConfirmDialog, PageHeader, useElapsed, useNow, useStaffText } from '../components';
-import { useBoardQuery, useOrderStatusMutation, useStaffMutation, useVenueQuery } from '../queries';
+import { PACE_MS } from '../pace';
+import { boardPace, useBoardQuery, useOrderStatusMutation, useStaffMutation, useVenueQuery } from '../queries';
 import { useStaff } from '../session';
 import styles from './BoardScreen.module.css';
 
@@ -56,6 +57,12 @@ function Board() {
 
   // The board stops updating when the connection drops; say so, or staff wait for orders that can't arrive.
   const connectionLost = board.isError || board.fetchStatus === 'paused';
+  // Outside opening hours it only checks every half hour; staying open late, staff can check now.
+  const resting = !connectionLost && boardPace(board.data, venue.data, new Date(nowMs)) === PACE_MS.closed;
+  const checkNow = () => {
+    void venue.refetch();
+    void board.refetch();
+  };
   const orders = board.data?.orders ?? [];
   const calls = board.data?.calls ?? [];
   const byColumn = (column: Column) =>
@@ -69,10 +76,15 @@ function Board() {
           title={t('staff.board.title')}
           meta={
             <>
-              <span className={styles.live} data-lost={connectionLost || undefined} role="status">
+              <span className={styles.live} data-lost={connectionLost || undefined} data-resting={resting || undefined} role="status">
                 <span className={styles.liveDot} />
-                {connectionLost ? t('staff.board.connectionLost') : t('staff.board.live')}
+                {connectionLost ? t('staff.board.connectionLost') : resting ? t('staff.board.resting') : t('staff.board.live')}
               </span>
+              {resting && (
+                <button type="button" className={styles.checkNow} onClick={checkNow}>
+                  {t('staff.board.checkNow')}
+                </button>
+              )}
               <span className={styles.clock}>{clockTime(nowMs, i18n.language)}</span>
             </>
           }

@@ -2,6 +2,7 @@ import { Hono } from 'hono';
 import { csrf } from 'hono/csrf';
 import type { Db } from './db/client';
 import type { ServerErrorAlert } from './alerts';
+import type { HealthCheckTarget } from './healthCheck';
 import { errorHandler, type AppEnv } from './http';
 import { cashProvider, type PaymentProvider } from './payments/provider';
 import type { PhotoStorage } from './photos';
@@ -29,10 +30,12 @@ export interface AppOptions {
   cronSecret?: string;
   /** Delivers the scheduled reports to the team (Telegram on the live site). */
   notify?: (text: string) => Promise<boolean>;
+  /** The live site, for the morning health check (/api/cron/health-check). It also needs operatorToken. */
+  healthCheck?: HealthCheckTarget;
 }
 
 /** The whole API. Its dependencies are passed in, so tests can use their own. */
-export function createApp({ db, storage, guestSecret, payments = cashProvider, operatorToken, onUnexpectedError, cronSecret, notify }: AppOptions) {
+export function createApp({ db, storage, guestSecret, payments = cashProvider, operatorToken, onUnexpectedError, cronSecret, notify, healthCheck }: AppOptions) {
   const app = new Hono<AppEnv>().basePath('/api');
 
   // Refuses form posts from other sites; the API itself only accepts JSON and photo uploads.
@@ -54,7 +57,7 @@ export function createApp({ db, storage, guestSecret, payments = cashProvider, o
   app.route('/staff', serviceRoutes(db, payments));
   app.route('/guest/:slug/t/:qrToken', guestRoutes(db, guestSecret));
   app.route('/operator', operatorRoutes(db, operatorToken));
-  app.route('/cron', cronRoutes(db, { secret: cronSecret, notify }));
+  app.route('/cron', cronRoutes(db, { secret: cronSecret, notify, operatorToken, healthCheck }));
 
   app.notFound((c) => c.json({ error: { code: 'not_found' } }, 404));
   // The route's pattern (/api/guest/:slug/t/:qrToken/orders), never the address itself with its codes and ids.

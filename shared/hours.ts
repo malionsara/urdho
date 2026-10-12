@@ -1,4 +1,4 @@
-import type { OpeningDay } from '../../shared/types';
+import type { OpeningDay } from './types';
 
 const WEEKDAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 

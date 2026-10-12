@@ -53,6 +53,7 @@ function print(v: VenueStats) {
       (paidBills ? `: cash ${v.paid.cash.bills} (${lek(v.paid.cash.lek)}), card ${v.paid.card.bills} (${lek(v.paid.card.lek)}), ${cardShare}% by card` : ''),
   );
   console.log(`  ${pad('ordered on', 12)}${pad(`${v.daysWithOrders} of ${v.openDays} open days`, 26)}last order     ${when(v.lastOrderAt)}`);
+  if (v.leftOpen.length > 0) console.log(`  ${pad('not paid', 12)}${v.leftOpen.map((t) => `table ${t.tableNumber} (${lek(t.billLek)})`).join(', ')}, closed overnight`);
   console.log(`  ${pad('by day', 12)}${first} ${sparkline(v.byDay.map((d) => d.orders))} ${last}\n`);
 }
 

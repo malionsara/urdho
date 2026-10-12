@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { OpeningDay } from '../../shared/types';
+import type { OpeningDay } from './types';
 import { isOrderingOpen } from './hours';
 
 const week = (from: string, to: string, closedDays: number[] = []): OpeningDay[] =>

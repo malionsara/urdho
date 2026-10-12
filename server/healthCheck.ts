@@ -1,11 +1,12 @@
 import { randomUUID } from 'node:crypto';
-import { unitPriceLek } from '../../shared/pricing';
-import type { GuestMenu, PlacedOrder } from '../../shared/types';
+import { unitPriceLek } from '../shared/pricing';
+import type { GuestMenu, PlacedOrder } from '../shared/types';
 
 /*
- * The health check behind `pnpm smoke`: one table's whole evening through the real API, called the
- * way the guest's phone and the dashboard call it. A guest scans and orders, the order and a waiter
- * call reach the board, the kitchen serves it, the waiter takes cash and the table closes.
+ * The health check behind `pnpm smoke` and the morning job (/api/cron/health-check): one table's
+ * whole evening through the real API, called the way the guest's phone and the dashboard call it.
+ * A guest scans and orders, the order and a waiter call reach the board, the kitchen serves it,
+ * the waiter takes cash and the table closes.
  *
  * It orders from its own venue (urdho-check, prepared through /api/operator), never from a
  * restaurant's. It stops at the first step that fails and says what the server answered.
@@ -23,6 +24,9 @@ export interface SmokeOptions {
   /** Called as each step finishes, to print progress. */
   onStep?: (step: StepResult) => void;
 }
+
+/** Where the morning job runs the check; the operator token comes from the API's own settings. */
+export type HealthCheckTarget = Pick<SmokeOptions, 'baseUrl' | 'fetch' | 'site'>;
 
 export interface StepResult {
   name: string;

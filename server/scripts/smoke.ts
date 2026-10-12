@@ -6,7 +6,7 @@ import { createDb } from '../db/client';
 import { requireEnv } from '../env';
 import { storageFromEnv } from '../photos';
 import { liveTarget, operatorSettings } from './live';
-import { failureAlert, runSmokeCheck, type SmokeOptions, type StepResult } from './smoke-check';
+import { failureAlert, runSmokeCheck, type SmokeOptions, type StepResult } from '../healthCheck';
 
 /*
  * The health check: one table's whole evening, from scan to paid, through the real API, in a few
@@ -17,7 +17,8 @@ import { failureAlert, runSmokeCheck, type SmokeOptions, type StepResult } from 
  *   pnpm smoke --live   the live site, with the key in .env.operator; also loads the page and app files
  *
  * Exits with code 1 when a step fails. A failed --live check also goes to the team's Telegram when
- * TELEGRAM_BOT_TOKEN and TELEGRAM_CHAT_ID are set; GitHub runs it every hour and after each deploy.
+ * TELEGRAM_BOT_TOKEN and TELEGRAM_CHAT_ID are set. Vercel runs the same check every morning before
+ * lunch (/api/cron/health-check); GitHub runs it every hour and after each deploy, when Actions run.
  */
 
 const { values } = parseArgs({ options: { live: { type: 'boolean', default: false } } });

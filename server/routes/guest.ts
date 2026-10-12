@@ -6,7 +6,7 @@ import { placeOrderInput } from '../../shared/schemas';
 import type { GuestMenu } from '../../shared/types';
 import type { Db } from '../db/client';
 import { ApiError, notFound, readJson } from '../http';
-import { isOrderingOpen } from '../ordering/hours';
+import { isOrderingOpen } from '../../shared/hours';
 import { loadMenu } from '../repos/menu';
 import { callWaiter, getGuestOrder, isOrderFromClosedSession, placeOrder } from '../repos/orders';
 import { findGuestSession, findTableByCode, openOrJoinSession, type ScannedTable } from '../repos/sessions';

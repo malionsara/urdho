@@ -222,9 +222,24 @@ export async function loadBoard(db: Db, venueId: string) {
     .where(and(eq(serviceCall.venueId, venueId), isNull(serviceCall.acknowledgedAt)))
     .orderBy(asc(serviceCall.createdAt));
 
+  // Tables open on the Tables page (an order, or a call nobody answered yet): the board keeps
+  // watching after closing time until they're settled, since those guests can still call.
+  const [open] = await db
+    .select({ count: sql<number>`count(*)::int` })
+    .from(tableSession)
+    .where(
+      and(
+        eq(tableSession.venueId, venueId),
+        eq(tableSession.status, 'open'),
+        sql`(EXISTS (SELECT 1 FROM ${guestOrder} WHERE ${guestOrder.sessionId} = ${tableSession.id} AND ${guestOrder.venueId} = ${tableSession.venueId})
+          OR EXISTS (SELECT 1 FROM ${serviceCall} WHERE ${serviceCall.sessionId} = ${tableSession.id} AND ${serviceCall.venueId} = ${tableSession.venueId} AND ${serviceCall.acknowledgedAt} IS NULL))`,
+      ),
+    );
+
   return {
     orders: orders.map((o) => ({ ...o, firstInSession: firstIds.has(o.id) })),
     calls: calls.map((c) => ({ ...c, createdAt: c.createdAt.toISOString() })),
+    openTables: open?.count ?? 0,
   };
 }
 
@@ -319,6 +334,48 @@ export async function closeEmptySession(db: Db, venueId: string, sessionId: stri
     const session = await lockOpenSession(tx, venueId, sessionId);
     if (billOf(await loadOrders(tx, venueId, eq(guestOrder.sessionId, session.id))) > 0) throw new ApiError(409, 'unpaid_bill');
     await closeSession(tx, venueId, sessionId);
+  });
+}
+
+export interface ForgottenTable {
+  tableNumber: number;
+  billLek: number;
+}
+
+/**
+ * Closes tables nobody has touched for `idleHours`: no scan, order, kitchen step or waiter call.
+ * Staff are meant to mark every table paid, but on a busy night some slip through, and the next
+ * guests at that table would join the old bill. Returns how many closed, and those that still had
+ * a bill, for the team to follow up (staff can't close an unpaid bill themselves).
+ */
+export async function closeForgottenSessions(db: Db, venueId: string, idleHours: number): Promise<{ closed: number; unpaid: ForgottenTable[] }> {
+  return db.transaction(async (tx) => {
+    const idle = await tx
+      .select({ id: tableSession.id, tableNumber: diningTable.number })
+      .from(tableSession)
+      .innerJoin(diningTable, and(eq(diningTable.id, tableSession.tableId), eq(diningTable.venueId, tableSession.venueId)))
+      .where(
+        and(
+          eq(tableSession.venueId, venueId),
+          eq(tableSession.status, 'open'),
+          // greatest() skips the nulls of a table with no orders or no calls.
+          sql`greatest(
+            ${tableSession.openedAt},
+            (SELECT max(greatest(o.created_at, o.status_changed_at)) FROM ${guestOrder} o WHERE o.session_id = ${tableSession.id} AND o.venue_id = ${tableSession.venueId}),
+            (SELECT max(coalesce(c.acknowledged_at, c.created_at)) FROM ${serviceCall} c WHERE c.session_id = ${tableSession.id} AND c.venue_id = ${tableSession.venueId})
+          ) < now() - make_interval(hours => ${idleHours})`,
+        ),
+      )
+      .orderBy(asc(diningTable.number))
+      .for('update', { of: tableSession });
+
+    const unpaid: ForgottenTable[] = [];
+    for (const session of idle) {
+      const billLek = billOf(await loadOrders(tx, venueId, eq(guestOrder.sessionId, session.id)));
+      await closeSession(tx, venueId, session.id);
+      if (billLek > 0) unpaid.push({ tableNumber: session.tableNumber, billLek });
+    }
+    return { closed: idle.length, unpaid };
   });
 }
 

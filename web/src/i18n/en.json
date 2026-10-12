@@ -263,6 +263,8 @@
       "title": "Orders",
       "live": "Live",
       "connectionLost": "No connection",
+      "resting": "Closed",
+      "checkNow": "Check now",
       "calls": "Waiter calls",
       "callTitle": "Table {{number}} is calling the waiter",
       "callAck": "On my way",

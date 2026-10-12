@@ -263,6 +263,8 @@
       "title": "Porositë",
       "live": "Live",
       "connectionLost": "Pa lidhje",
+      "resting": "Mbyllur",
+      "checkNow": "Kontrollo tani",
       "calls": "Thirrje për kamarierin",
       "callTitle": "Tavolina {{number}} thërret kamarierin",
       "callAck": "Po vij",

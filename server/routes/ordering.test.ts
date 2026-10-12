@@ -308,6 +308,9 @@ describe('staff running service', () => {
     const t1 = tables.find((t: { table: { number: number } }) => t.table.number === 1);
     expect(t1).toMatchObject({ billLek: 1900, openCall: true });
     expect(tables.find((t: { table: { number: number } }) => t.table.number === 2)).toMatchObject({ session: null, billLek: 0 });
+    // A table only scanned at doesn't count: the board watches tables with a bill or a call.
+    await scan(v.table2);
+    expect((await call('GET', '/api/staff/board', { cookie: v.waiter })).body?.openTables).toBe(1);
 
     const paid = await call('POST', `/api/staff/sessions/${t1.session.id}/pay`, { cookie: v.waiter, body: { method: 'card' } });
     expect(paid.status).toBe(200);
@@ -319,6 +322,7 @@ describe('staff running service', () => {
     const after = (await call('GET', '/api/staff/tables', { cookie: v.waiter })).body?.tables.find((t: { table: { number: number } }) => t.table.number === 1);
     expect(after).toMatchObject({ session: null, billLek: 0, openCall: false });
     expect((await call('GET', '/api/staff/board', { cookie: v.waiter })).body?.calls).toEqual([]);
+    expect((await call('GET', '/api/staff/board', { cookie: v.waiter })).body?.openTables).toBe(0);
 
     const nextGuests = await scan(v.table1);
     expect(nextGuests.cookie).not.toBe(guest.cookie);
@@ -385,7 +389,7 @@ describe("tenancy: venue A never sees or touches venue B's service", () => {
     await call('POST', `${b.table1}/calls`, { cookie: bGuest.cookie });
 
     const board = (await call('GET', '/api/staff/board', { cookie: a.waiter })).body!;
-    expect(board).toEqual({ orders: [], calls: [] });
+    expect(board).toEqual({ orders: [], calls: [], openTables: 0 });
     const tables = (await call('GET', '/api/staff/tables', { cookie: a.waiter })).body?.tables;
     expect(tables.map((t: { table: { number: number } }) => t.table.number)).toEqual([1, 2]);
     expect(tables.every((t: { session: unknown }) => t.session === null)).toBe(true);

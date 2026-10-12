@@ -8,7 +8,7 @@ import { ME_KEY, useMeQuery } from './queries';
 /*
  * Who is signed in (from the session cookie, via /api/staff/me) and whether service has started on
  * this screen. Service lives in memory only: after a reload the browser needs a fresh tap before it
- * may play sound again.
+ * may play sound again, and the same goes when the browser silenced the page while the screen was off.
  */
 
 export const ROLE_PAGES: Record<StaffRole, string[]> = {
@@ -33,6 +33,8 @@ interface StaffSession {
     start: () => void;
     toggleMute: () => void;
     chime: (kind: ChimeKind) => void;
+    /** Whether to hold the screen on during service: off once the venue is closed and settled. */
+    keepAwake: (on: boolean) => void;
   };
 }
 
@@ -68,13 +70,12 @@ export function StaffSessionProvider({ children }: { children: ReactNode }) {
   const me = useMeQuery();
   const [serviceOn, setServiceOn] = useState(false);
   const [muted, setMuted] = useState(false);
+  const [awake, setAwake] = useState(true);
   const audio = useRef<AudioContext | null>(null);
-  const wakeLock = useRef<WakeLockSentinel | null>(null);
   const user = me.data?.user ?? null;
 
   /** Forgets who is signed in on this device, which sends every page back to the login screen. */
   const forgetDevice = useCallback(() => {
-    void wakeLock.current?.release();
     setServiceOn(false);
     // The account first: removing it from under the screens watching it would leave them stuck.
     queryClient.setQueryData(ME_KEY, null);
@@ -99,23 +100,50 @@ export function StaffSessionProvider({ children }: { children: ReactNode }) {
     };
   }, [queryClient, forgetDevice]);
 
-  const requestWakeLock = useCallback(async () => {
-    try {
-      wakeLock.current = (await navigator.wakeLock?.request('screen')) ?? null;
-    } catch {
-      // Not supported or refused (low battery): the screen may dim, sound still works.
-    }
-  }, []);
+  // The screen stays on through service, and may sleep once the venue is closed and settled. The
+  // browser drops the lock whenever the tab is hidden, so it's taken back on return.
+  useEffect(() => {
+    if (!serviceOn || !awake) return;
+    let lock: WakeLockSentinel | null = null;
+    let asking = false;
+    let stopped = false;
+    const request = async () => {
+      if (asking || (lock && !lock.released)) return;
+      asking = true;
+      try {
+        lock = (await navigator.wakeLock?.request('screen')) ?? null;
+        if (stopped) void lock?.release();
+      } catch {
+        // Not supported or refused (low battery): the screen may dim, sound still works.
+      } finally {
+        asking = false;
+      }
+    };
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') void request();
+    };
+    void request();
+    document.addEventListener('visibilitychange', onVisible);
+    return () => {
+      stopped = true;
+      document.removeEventListener('visibilitychange', onVisible);
+      void lock?.release();
+    };
+  }, [serviceOn, awake]);
 
-  // The browser drops the wake lock when the tab is hidden; take it back on return.
+  // Back from a locked screen, some browsers (iPhones and iPads) keep the sound switched off until
+  // the next tap. Then the board shows "Start service" again rather than staying silent.
   useEffect(() => {
     if (!serviceOn) return;
-    const onVisible = () => {
-      if (document.visibilityState === 'visible') void requestWakeLock();
+    const onVisible = async () => {
+      const ctx = audio.current;
+      if (document.visibilityState !== 'visible' || !ctx || ctx.state === 'running') return;
+      await Promise.race([ctx.resume(), new Promise((resolve) => setTimeout(resolve, 1000))]);
+      if ((ctx.state as string) !== 'running') setServiceOn(false);
     };
     document.addEventListener('visibilitychange', onVisible);
     return () => document.removeEventListener('visibilitychange', onVisible);
-  }, [serviceOn, requestWakeLock]);
+  }, [serviceOn]);
 
   const value = useMemo<StaffSession>(
     () => ({
@@ -141,16 +169,16 @@ export function StaffSessionProvider({ children }: { children: ReactNode }) {
           audio.current ??= new AudioContext();
           void audio.current.resume();
           playChime(audio.current, 'order');
-          void requestWakeLock();
           setServiceOn(true);
         },
         toggleMute: () => setMuted((m) => !m),
         chime: (kind) => {
           if (audio.current && !muted) playChime(audio.current, kind);
         },
+        keepAwake: setAwake,
       },
     }),
-    [user, me.isPending, queryClient, serviceOn, muted, requestWakeLock, forgetDevice],
+    [user, me.isPending, queryClient, serviceOn, muted, forgetDevice],
   );
 
   return <StaffSessionContext.Provider value={value}>{children}</StaffSessionContext.Provider>;
